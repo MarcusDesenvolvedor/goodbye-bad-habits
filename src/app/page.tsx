@@ -25,8 +25,8 @@ export default async function Home() {
       <Show when="signed-in">
         <div className="flex flex-wrap items-center gap-4">
           <UserButton />
-          <Link className="text-sm underline" href="/dashboard">
-            Dashboard
+          <Link className="text-sm underline" href="/my-boards">
+            My boards
           </Link>
         </div>
       </Show>

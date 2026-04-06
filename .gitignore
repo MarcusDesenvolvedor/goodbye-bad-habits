@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Stitch design exports (generated locally; see docs/design/stitch-kanban-bauhaus/README.md)
+docs/design/stitch-kanban-bauhaus/reference.html
+docs/design/stitch-kanban-bauhaus/preview.png

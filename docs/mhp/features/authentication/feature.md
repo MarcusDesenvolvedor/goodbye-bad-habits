@@ -60,7 +60,7 @@ No webhook is required for this MVP; sync is **lazy on first API call** after lo
 ## UI behavior (minimal)
 
 - **Public:** landing at `/` with links to sign in / sign up (Clerk components).
-- **Protected:** `/dashboard` — placeholder content after auth (basic layout for later Google Stitch).
+- **Protected:** `/my-boards` — list of boards after auth (Bauhaus layout); `/dashboard` redirects to `/my-boards`.
 
 ---
 

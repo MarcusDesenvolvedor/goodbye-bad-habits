@@ -49,11 +49,10 @@ The project follows a **feature-oriented and layered structure**.
   /app
     /(public)
       page.tsx
-    /(dashboard)
-      /boards
-        page.tsx
-      /board/[boardId]
-        page.tsx
+    /my-boards
+      page.tsx
+    /board/[boardId]
+      page.tsx
     /api
       /boards
         route.ts
