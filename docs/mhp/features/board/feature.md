@@ -24,7 +24,7 @@ The **board view** (`/board/[boardId]`) and related chrome follow the **Google S
 
 Reference assets (HTML + screenshot) may be downloaded locally via `scripts/fetch-stitch-board-assets.mjs` using `STITCH_API_KEY` (see `docs/design/stitch-kanban-bauhaus/README.md`). The production app implements the layout in **React + Tailwind**, not the exported HTML iframe.
 
-The **board workspace** (`/board/[boardId]`) includes a **Kanban** UI (currently **mock data** for drag-and-drop preview) under the Bauhaus shell until List/Card are persisted via the API.
+The **board workspace** (`/board/[boardId]`) includes a left **Inbox** and **Kanban** columns under one **shared** drag-and-drop context (`BoardWorkspace`): tasks can move between Inbox and columns (To do / In progress / Done) and reorder within each area (mock data until List/Card are persisted via the API).
 
 **My boards** (`/my-boards`) uses the same **Bauhaus** vocabulary for listing workspaces, creating boards, and opening `/board/[id]`.
 

@@ -11,7 +11,7 @@ import { stitch } from "@google/stitch-sdk";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = join(__dirname, "../docs/design/stitch-kanban-bauhaus");
 const PROJECT_ID = "12323884550944750041";
-const SCREEN_ID = "17188e23de0b4a50af64efc4150443c4";
+const SCREEN_ID = "f1a2073415904a26b0abd7b8527ddf93";
 
 async function downloadToFile(url, destPath) {
   const res = await fetch(url);
@@ -37,13 +37,23 @@ async function main() {
   const htmlUrl = await screen.getHtml();
   const imageUrl = await screen.getImage();
 
-  console.log("HTML URL:", htmlUrl);
-  console.log("Image URL:", imageUrl);
+  console.log("HTML URL:", htmlUrl || "(none)");
+  console.log("Image URL:", imageUrl || "(none)");
 
-  await downloadToFile(htmlUrl, join(OUT_DIR, "reference.html"));
-  await downloadToFile(imageUrl, join(OUT_DIR, "preview.png"));
+  if (htmlUrl) {
+    await downloadToFile(htmlUrl, join(OUT_DIR, "reference.html"));
+  } else {
+    console.warn(
+      "Stitch returned no HTML download URL for this screen; skipped reference.html",
+    );
+  }
+  if (imageUrl) {
+    await downloadToFile(imageUrl, join(OUT_DIR, "preview.png"));
+  } else {
+    console.warn("Stitch returned no image URL; skipped preview.png");
+  }
 
-  console.log(`Wrote reference.html and preview.png to ${OUT_DIR}`);
+  console.log(`Wrote assets to ${OUT_DIR} (HTML only if URL was present)`);
 }
 
 main().catch((err) => {

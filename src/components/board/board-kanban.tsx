@@ -1,26 +1,13 @@
 "use client";
 
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  closestCorners,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   type ColumnTasks,
@@ -28,33 +15,8 @@ import {
   type KanbanTask,
   KANBAN_COLUMN_META,
   KANBAN_COLUMN_ORDER,
-  createMockKanbanColumns,
+  TAG_PILL_CLASSES,
 } from "./board-kanban-mock";
-
-function findContainer(
-  columns: ColumnTasks,
-  id: string,
-): KanbanColumnId | undefined {
-  if (KANBAN_COLUMN_ORDER.includes(id as KanbanColumnId)) {
-    return id as KanbanColumnId;
-  }
-  for (const col of KANBAN_COLUMN_ORDER) {
-    if (columns[col].some((t) => t.id === id)) {
-      return col;
-    }
-  }
-  return undefined;
-}
-
-function findTask(columns: ColumnTasks, taskId: string): KanbanTask | undefined {
-  for (const col of KANBAN_COLUMN_ORDER) {
-    const t = columns[col].find((c) => c.id === taskId);
-    if (t) {
-      return t;
-    }
-  }
-  return undefined;
-}
 
 function SortableCard({
   task,
@@ -75,14 +37,15 @@ function SortableCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0 : undefined,
   };
 
   return (
     <article
       ref={setNodeRef}
       style={style}
-      className={`touch-none border-2 border-black bg-[#f4f1ea] p-3 shadow-[3px_3px_0_0_rgb(0,0,0)] transition-shadow duration-200 ease-out ${
-        isDragging ? "z-10 opacity-90 shadow-[5px_5px_0_0_rgb(0,0,0)]" : ""
+      className={`touch-none rounded-xl border border-white/10 bg-zinc-900/80 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-shadow duration-200 ease-out ${
+        isDragging ? "pointer-events-none" : ""
       }`}
     >
       <button
@@ -91,20 +54,20 @@ function SortableCard({
         {...attributes}
         {...listeners}
       >
-        <h3 className="text-sm font-bold uppercase tracking-wide text-neutral-900">
+        <h3 className="text-sm font-bold tracking-wide text-zinc-100">
           {task.title}
         </h3>
         {task.description ? (
-          <p className="mt-1 text-xs leading-snug text-zinc-600">
+          <p className="mt-1 text-xs leading-snug text-zinc-400">
             {task.description}
           </p>
         ) : null}
         {task.tags.length > 0 ? (
           <ul className="mt-2 flex flex-wrap gap-1.5">
-            {task.tags.map((tag) => (
+            {task.tags.map((tag, i) => (
               <li
                 key={tag}
-                className="border border-black bg-white px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-neutral-800"
+                className={`rounded-md px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${TAG_PILL_CLASSES[i % TAG_PILL_CLASSES.length]}`}
               >
                 {tag}
               </li>
@@ -112,7 +75,7 @@ function SortableCard({
           </ul>
         ) : null}
         {task.dueAt ? (
-          <p className="mt-2 text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+          <p className="mt-2 text-[0.65rem] font-semibold uppercase tracking-widest text-zinc-500">
             Due{" "}
             {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
               month: "short",
@@ -125,15 +88,36 @@ function SortableCard({
   );
 }
 
-function CardPreview({ task }: { task: KanbanTask }) {
+export function CardPreview({ task }: { task: KanbanTask }) {
   return (
-    <article className="pointer-events-none border-2 border-black bg-[#f4f1ea] p-3 shadow-[5px_5px_0_0_rgb(0,0,0)]">
-      <h3 className="text-sm font-bold uppercase tracking-wide text-neutral-900">
+    <article className="pointer-events-none w-[min(100vw-3rem,254px)] rounded-xl border border-blue-400/50 bg-zinc-900/90 p-3 shadow-[0_0_32px_rgba(59,130,246,0.3)]">
+      <h3 className="text-sm font-bold tracking-wide text-zinc-100">
         {task.title}
       </h3>
       {task.description ? (
-        <p className="mt-1 text-xs leading-snug text-zinc-600">
+        <p className="mt-1 text-xs leading-snug text-zinc-400">
           {task.description}
+        </p>
+      ) : null}
+      {task.tags.length > 0 ? (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {task.tags.map((tag, i) => (
+            <li
+              key={tag}
+              className={`rounded-md px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${TAG_PILL_CLASSES[i % TAG_PILL_CLASSES.length]}`}
+            >
+              {tag}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {task.dueAt ? (
+        <p className="mt-2 text-[0.65rem] font-semibold uppercase tracking-widest text-zinc-500">
+          Due{" "}
+          {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}
         </p>
       ) : null}
     </article>
@@ -188,18 +172,13 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[min(420px,55vh)] w-[min(100%,280px)] shrink-0 flex-col border-4 border-black bg-white shadow-[4px_4px_0_0_rgb(0,0,0)] transition-[box-shadow,ring] duration-200 ease-out ${
-        isOver
-          ? "ring-2 ring-[#2563eb] ring-offset-2 ring-offset-[#f4f1ea]"
-          : ""
+      className={`flex min-h-[min(420px,55vh)] w-[min(100%,280px)] shrink-0 flex-col overflow-hidden transition-[box-shadow] duration-200 ease-out ${meta.columnShellClass} ${
+        isOver ? "ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-[var(--stitch-bg)]" : ""
       }`}
     >
-      <div
-        className={`h-2 border-b-4 border-black ${meta.accentClass}`}
-        aria-hidden
-      />
-      <div className="border-b-4 border-black px-3 py-2">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-900">
+      <div className={`h-1 w-full shrink-0 ${meta.accentBarClass}`} aria-hidden />
+      <div className="border-b border-white/10 px-3 py-2">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-100">
           {meta.title}
         </h2>
         <p className="text-[0.65rem] uppercase tracking-wide text-zinc-500">
@@ -214,7 +193,7 @@ function KanbanColumn({
         >
           {tasks.length === 0 ? (
             <div
-              className="flex min-h-[120px] items-center justify-center border-2 border-dashed border-zinc-400 p-3 text-center text-[0.65rem] font-bold uppercase tracking-wide text-zinc-400"
+              className="flex min-h-[120px] items-center justify-center rounded-lg border border-dashed border-zinc-600/80 p-3 text-center text-[0.65rem] font-bold uppercase tracking-wide text-zinc-500"
               aria-hidden
             >
               Drop cards here
@@ -226,14 +205,14 @@ function KanbanColumn({
         </SortableContext>
       </div>
 
-      <div className="mt-auto border-t-4 border-black bg-[#f4f1ea] p-3">
+      <div className="mt-auto border-t border-white/10 bg-black/25 p-3 backdrop-blur-sm">
         {!showForm ? (
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="w-full border-2 border-black border-dashed bg-white py-2 text-xs font-bold uppercase tracking-widest text-neutral-800 transition hover:bg-[#f4f1ea]"
+            className="w-full rounded-lg border border-dashed border-blue-400/45 bg-transparent py-2.5 text-xs font-bold uppercase tracking-widest text-zinc-300 shadow-[0_0_16px_rgba(59,130,246,0.12)] transition hover:border-cyan-400/60 hover:text-white"
           >
-            Add card
+            + Add card
           </button>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-2">
@@ -242,7 +221,7 @@ function KanbanColumn({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title"
-              className="w-full border-4 border-black bg-white px-2 py-1.5 text-xs outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-[#2563eb] focus:ring-offset-1"
+              className="w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50"
               maxLength={120}
               aria-label="Card title"
             />
@@ -251,7 +230,7 @@ function KanbanColumn({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Short description"
               rows={2}
-              className="w-full resize-none border-4 border-black bg-white px-2 py-1.5 text-xs outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-[#2563eb] focus:ring-offset-1"
+              className="w-full resize-none rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50"
               maxLength={500}
               aria-label="Card description"
             />
@@ -259,27 +238,27 @@ function KanbanColumn({
               value={tagsRaw}
               onChange={(e) => setTagsRaw(e.target.value)}
               placeholder="Tags (comma separated)"
-              className="w-full border-4 border-black bg-white px-2 py-1.5 text-xs outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-[#2563eb] focus:ring-offset-1"
+              className="w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50"
               aria-label="Tags"
             />
             <input
               type="date"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
-              className="w-full border-4 border-black bg-white px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#2563eb] focus:ring-offset-1"
+              className="w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:ring-2 focus:ring-blue-500/50"
               aria-label="Due date"
             />
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                className="flex-1 border-4 border-black bg-[#2563eb] py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700"
+                className="flex-1 rounded-lg border border-blue-400/50 bg-blue-600/80 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition hover:bg-blue-500"
               >
                 Save
               </button>
               <button
                 type="button"
                 onClick={resetForm}
-                className="flex-1 border-4 border-black bg-black py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-zinc-800"
+                className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 py-2 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:bg-zinc-800"
               >
                 Cancel
               </button>
@@ -291,137 +270,38 @@ function KanbanColumn({
   );
 }
 
-export function BoardKanban() {
-  const [columns, setColumns] = useState<ColumnTasks>(() =>
-    createMockKanbanColumns(),
-  );
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  const activeTask = useMemo(
-    () => (activeId ? findTask(columns, activeId) : undefined),
-    [activeId, columns],
-  );
-
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    setActiveId(null);
-    if (!over) {
-      return;
-    }
-
-    const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
-
-    const activeContainer = findContainer(columns, activeIdStr);
-    if (!activeContainer) {
-      return;
-    }
-
-    const overContainer = KANBAN_COLUMN_ORDER.includes(overIdStr as KanbanColumnId)
-      ? (overIdStr as KanbanColumnId)
-      : findContainer(columns, overIdStr);
-
-    if (!overContainer) {
-      return;
-    }
-
-    if (activeContainer === overContainer) {
-      const list = columns[activeContainer];
-      const oldIndex = list.findIndex((t) => t.id === activeIdStr);
-      const newIndex = list.findIndex((t) => t.id === overIdStr);
-      if (
-        oldIndex === -1 ||
-        newIndex === -1 ||
-        oldIndex === newIndex
-      ) {
-        return;
-      }
-      setColumns((prev) => ({
-        ...prev,
-        [activeContainer]: arrayMove(prev[activeContainer], oldIndex, newIndex),
-      }));
-      return;
-    }
-
-    setColumns((prev) => {
-      const next: ColumnTasks = {
-        todo: [...prev.todo],
-        "in-progress": [...prev["in-progress"]],
-        done: [...prev.done],
-      };
-      const from = next[activeContainer];
-      const to = next[overContainer];
-      const oldIndex = from.findIndex((t) => t.id === activeIdStr);
-      if (oldIndex === -1) {
-        return prev;
-      }
-      const [moved] = from.splice(oldIndex, 1);
-
-      if (KANBAN_COLUMN_ORDER.includes(overIdStr as KanbanColumnId)) {
-        to.push(moved);
-      } else {
-        const newIndex = to.findIndex((t) => t.id === overIdStr);
-        if (newIndex === -1) {
-          to.push(moved);
-        } else {
-          to.splice(newIndex, 0, moved);
-        }
-      }
-      return next;
-    });
-  }
-
-  function handleAddCard(columnId: KanbanColumnId, task: KanbanTask) {
-    setColumns((prev) => ({
-      ...prev,
-      [columnId]: [...prev[columnId], task],
-    }));
-  }
-
+export function KanbanBoardSection({
+  columns,
+  onAddCard,
+}: {
+  columns: ColumnTasks;
+  onAddCard: (columnId: KanbanColumnId, task: KanbanTask) => void;
+}) {
   return (
-    <section className="border-4 border-black bg-white p-6 shadow-[8px_8px_0_0_rgb(0,0,0)]">
-      <div className="mb-6 border-b-4 border-black pb-4">
-        <h2 className="text-lg font-bold uppercase tracking-widest">
+    <section className="rounded-2xl border border-white/10 bg-[var(--stitch-surface)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
+      <div className="mb-6 flex flex-col gap-3 border-b border-white/10 pb-4">
+        <div
+          className="h-1 w-36 rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-violet-500 shadow-[0_0_14px_rgba(59,130,246,0.45)]"
+          aria-hidden
+        />
+        <h2 className="text-lg font-bold uppercase tracking-widest text-zinc-100">
           Kanban
         </h2>
         <p className="text-xs uppercase tracking-wide text-zinc-500">
-          Mock preview · drag cards between columns or reorder within a column
+          Drag from Inbox or between columns · reorder within a column
         </p>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="-mx-1 flex gap-4 overflow-x-auto overflow-y-visible pb-2 pt-1">
-          {KANBAN_COLUMN_ORDER.map((columnId) => (
-            <KanbanColumn
-              key={columnId}
-              columnId={columnId}
-              tasks={columns[columnId]}
-              onAddCard={handleAddCard}
-            />
-          ))}
-        </div>
-        <DragOverlay dropAnimation={null}>
-          {activeTask ? <CardPreview task={activeTask} /> : null}
-        </DragOverlay>
-      </DndContext>
+      <div className="-mx-1 flex gap-4 overflow-x-auto overflow-y-visible pb-2 pt-1">
+        {KANBAN_COLUMN_ORDER.map((columnId) => (
+          <KanbanColumn
+            key={columnId}
+            columnId={columnId}
+            tasks={columns[columnId]}
+            onAddCard={onAddCard}
+          />
+        ))}
+      </div>
     </section>
   );
 }
