@@ -1,3 +1,5 @@
+import type { CardLabel } from "./board-labels";
+
 export type KanbanColumnId = "todo" | "in-progress" | "done";
 
 export type KanbanTask = {
@@ -5,6 +7,8 @@ export type KanbanTask = {
   title: string;
   description: string;
   tags: string[];
+  /** Structured label; preserved when moving cards across inbox and columns */
+  label?: CardLabel;
   dueAt?: string;
 };
 

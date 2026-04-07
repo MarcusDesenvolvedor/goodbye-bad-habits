@@ -13,7 +13,6 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
-  SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
@@ -32,6 +31,7 @@ import {
   WORKSPACE_INBOX_ZONE_ID,
   type InboxTask,
 } from "./board-inbox";
+import type { WorkspaceCustomLabel } from "./board-labels";
 import { CardPreview, KanbanBoardSection } from "./board-kanban";
 
 function findKanbanContainer(
@@ -100,6 +100,11 @@ export function BoardWorkspace() {
   );
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedKanbanColumnId, setSelectedKanbanColumnId] =
+    useState<KanbanColumnId | null>(null);
+  const [workspaceCustomLabels, setWorkspaceCustomLabels] = useState<
+    WorkspaceCustomLabel[]
+  >([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -191,6 +196,7 @@ export function BoardWorkspace() {
         title: task.title,
         description: task.description,
         tags: [],
+        label: task.label,
         dueAt: undefined,
       };
       setInboxTasks((prev) => prev.filter((t) => t.id !== activeIdStr));
@@ -226,6 +232,7 @@ export function BoardWorkspace() {
         id: `inbox-${crypto.randomUUID()}`,
         title: task.title,
         description: task.description,
+        label: task.label,
       };
       setColumns((prev) => {
         const next: ColumnTasks = {
@@ -296,6 +303,58 @@ export function BoardWorkspace() {
     setInboxTasks((prev) => [...prev, task]);
   }
 
+  function handleUpdateInboxTask(updated: InboxTask) {
+    setInboxTasks((prev) =>
+      prev.map((t) => (t.id === updated.id ? updated : t)),
+    );
+  }
+
+  function handleDeleteInboxTask(id: string) {
+    setInboxTasks((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  function handleDuplicateInboxTask(task: InboxTask) {
+    if (selectedKanbanColumnId) {
+      const kanbanTask: KanbanTask = {
+        id: `mock-${crypto.randomUUID()}`,
+        title: task.title,
+        description: task.description,
+        tags: [],
+        label: task.label,
+        dueAt: undefined,
+      };
+      setColumns((prev) => ({
+        ...prev,
+        [selectedKanbanColumnId]: [
+          ...prev[selectedKanbanColumnId],
+          kanbanTask,
+        ],
+      }));
+      return;
+    }
+    const copy: InboxTask = {
+      ...task,
+      id: `inbox-${crypto.randomUUID()}`,
+      comments: task.comments?.length ? [...task.comments] : undefined,
+    };
+    setInboxTasks((prev) => [...prev, copy]);
+  }
+
+  function handleSelectKanbanColumn(columnId: KanbanColumnId) {
+    setSelectedKanbanColumnId((prev) =>
+      prev === columnId ? null : columnId,
+    );
+  }
+
+  function handleAddWorkspaceCustomLabel(entry: WorkspaceCustomLabel) {
+    setWorkspaceCustomLabels((prev) => {
+      if (prev.some((p) => p.id === entry.id)) {
+        return prev;
+      }
+      return [...prev, entry];
+    });
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -307,11 +366,18 @@ export function BoardWorkspace() {
         <BoardInboxSection
           tasks={inboxTasks}
           onAddInboxTask={handleAddInboxTask}
+          onUpdateInboxTask={handleUpdateInboxTask}
+          onDeleteInboxTask={handleDeleteInboxTask}
+          onDuplicateInboxTask={handleDuplicateInboxTask}
+          workspaceCustomLabels={workspaceCustomLabels}
+          onAddWorkspaceCustomLabel={handleAddWorkspaceCustomLabel}
         />
         <div className="min-w-0 flex-1">
           <KanbanBoardSection
             columns={columns}
             onAddCard={handleAddKanbanCard}
+            selectedColumnId={selectedKanbanColumnId}
+            onSelectColumn={handleSelectKanbanColumn}
           />
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 
+import { CardLabelBadge } from "./board-label-badge";
 import {
   type ColumnTasks,
   type KanbanColumnId,
@@ -57,6 +58,11 @@ function SortableCard({
         <h3 className="text-sm font-bold tracking-wide text-zinc-100">
           {task.title}
         </h3>
+        {task.label ? (
+          <div className="mt-1.5">
+            <CardLabelBadge label={task.label} />
+          </div>
+        ) : null}
         {task.description ? (
           <p className="mt-1 text-xs leading-snug text-zinc-400">
             {task.description}
@@ -94,6 +100,11 @@ export function CardPreview({ task }: { task: KanbanTask }) {
       <h3 className="text-sm font-bold tracking-wide text-zinc-100">
         {task.title}
       </h3>
+      {task.label ? (
+        <div className="mt-1.5">
+          <CardLabelBadge label={task.label} />
+        </div>
+      ) : null}
       {task.description ? (
         <p className="mt-1 text-xs leading-snug text-zinc-400">
           {task.description}
@@ -128,10 +139,14 @@ function KanbanColumn({
   columnId,
   tasks,
   onAddCard,
+  isSelected,
+  onSelectColumn,
 }: {
   columnId: KanbanColumnId;
   tasks: KanbanTask[];
   onAddCard: (columnId: KanbanColumnId, task: KanbanTask) => void;
+  isSelected: boolean;
+  onSelectColumn: (columnId: KanbanColumnId) => void;
 }) {
   const meta = KANBAN_COLUMN_META[columnId];
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
@@ -172,12 +187,29 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[min(420px,55vh)] w-[min(100%,280px)] shrink-0 flex-col overflow-hidden transition-[box-shadow] duration-200 ease-out ${meta.columnShellClass} ${
-        isOver ? "ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-[var(--stitch-bg)]" : ""
+      className={`flex min-h-[min(420px,55vh)] w-[min(100%,280px)] shrink-0 flex-col overflow-hidden transition-[box-shadow,ring] duration-200 ease-out ${meta.columnShellClass} ${
+        isOver
+          ? "ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-[var(--stitch-bg)]"
+          : isSelected
+            ? "ring-2 ring-violet-400/40 ring-offset-2 ring-offset-[var(--stitch-bg)]"
+            : ""
       }`}
     >
       <div className={`h-1 w-full shrink-0 ${meta.accentBarClass}`} aria-hidden />
-      <div className="border-b border-white/10 px-3 py-2">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-pressed={isSelected}
+        aria-label={`${meta.title} column. ${isSelected ? "Selected for inbox copy." : "Select for inbox copy."}`}
+        className="cursor-pointer border-b border-white/10 px-3 py-2 outline-none transition hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+        onClick={() => onSelectColumn(columnId)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelectColumn(columnId);
+          }
+        }}
+      >
         <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-100">
           {meta.title}
         </h2>
@@ -273,9 +305,13 @@ function KanbanColumn({
 export function KanbanBoardSection({
   columns,
   onAddCard,
+  selectedColumnId,
+  onSelectColumn,
 }: {
   columns: ColumnTasks;
   onAddCard: (columnId: KanbanColumnId, task: KanbanTask) => void;
+  selectedColumnId: KanbanColumnId | null;
+  onSelectColumn: (columnId: KanbanColumnId) => void;
 }) {
   return (
     <section className="rounded-2xl border border-white/10 bg-[var(--stitch-surface)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
@@ -288,7 +324,8 @@ export function KanbanBoardSection({
           Kanban
         </h2>
         <p className="text-xs uppercase tracking-wide text-zinc-500">
-          Drag from Inbox or between columns · reorder within a column
+          Drag from Inbox or between columns · reorder within a column · click a
+          column header to paste Inbox copies there
         </p>
       </div>
 
@@ -299,6 +336,8 @@ export function KanbanBoardSection({
             columnId={columnId}
             tasks={columns[columnId]}
             onAddCard={onAddCard}
+            isSelected={selectedColumnId === columnId}
+            onSelectColumn={onSelectColumn}
           />
         ))}
       </div>
