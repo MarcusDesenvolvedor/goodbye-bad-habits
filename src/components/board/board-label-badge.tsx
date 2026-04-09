@@ -16,28 +16,13 @@ export function CardLabelBadge({
   if (label.kind === "preset") {
     return (
       <span
-        className={`inline-flex max-w-full items-center gap-1 rounded-full border border-white/15 bg-zinc-950/60 py-0.5 pl-1 pr-0.5 ${className}`}
+        className={`inline-flex max-w-full items-center ${className}`}
         title={meta.title}
       >
         <span
-          className={`h-3 w-3 shrink-0 rounded-full ${meta.dotClass}`}
+          className={`h-2 w-[4.25rem] max-w-[40%] min-w-[3rem] shrink-0 rounded-full ${meta.dotClass}`}
           aria-hidden
         />
-        {onRemove ? (
-          <button
-            type="button"
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-white/10 hover:text-zinc-200"
-            aria-label="Remove label"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onRemove();
-            }}
-          >
-            ×
-          </button>
-        ) : null}
       </span>
     );
   }

@@ -9,6 +9,18 @@ export async function findBoardsByUserId(userId: string): Promise<Board[]> {
   });
 }
 
+/** Ensures new users always have a default workspace (see product rules). */
+export async function ensureDefaultBoardIfEmpty(userId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const count = await tx.board.count({ where: { userId } });
+    if (count === 0) {
+      await tx.board.create({
+        data: { userId, title: "TODAY" },
+      });
+    }
+  });
+}
+
 export async function createBoard(input: {
   userId: string;
   title: string;

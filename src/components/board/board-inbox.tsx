@@ -8,6 +8,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  Fragment,
+  memo,
   useCallback,
   useEffect,
   useId,
@@ -18,7 +20,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
+import { BoardCardDropSlot } from "./board-card-drop-slot";
 import { CardLabelBadge } from "./board-label-badge";
+import { BOARD_SORTABLE_TRANSITION } from "./board-sortable-transition";
 import {
   LABEL_COLOR_META,
   LABEL_COLOR_ORDER,
@@ -41,8 +45,10 @@ export type InboxTask = {
 /** Droppable id for the inbox list (shared with board-workspace drag logic). */
 export const WORKSPACE_INBOX_ZONE_ID = "workspace-inbox-zone";
 
-const inboxCardClass =
-  "touch-none rounded-xl border border-white/10 bg-zinc-900/80 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-shadow duration-200 ease-out";
+const inboxCardSurfaceClass =
+  "touch-none rounded-xl border border-white/10 bg-zinc-900/80 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm";
+
+const inboxCardInteractiveClass = `${inboxCardSurfaceClass} transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(0,0,0,0.5)]`;
 
 const inboxInputClass =
   "w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50";
@@ -88,7 +94,7 @@ function MoreIcon({ className }: { className?: string }) {
   );
 }
 
-export function InboxSortableCard({
+export const InboxSortableCard = memo(function InboxSortableCard({
   task,
   disabled,
   onUpdateTask,
@@ -112,7 +118,11 @@ export function InboxSortableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id, disabled });
+  } = useSortable({
+    id: task.id,
+    disabled,
+    transition: BOARD_SORTABLE_TRANSITION,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -202,7 +212,11 @@ export function InboxSortableCard({
   }, [openCardVisible, labelsVisible, menuOpen, closeMenu]);
 
   function applyPreset(color: LabelColor) {
-    onUpdateTask({ ...task, label: { kind: "preset", color } });
+    const next: InboxTask =
+      labelsMatch(task.label, { kind: "preset", color })
+        ? { ...task, label: undefined }
+        : { ...task, label: { kind: "preset", color } };
+    onUpdateTask(next);
     setLabelsVisible(false);
     setLabelCreateOpen(false);
     closeMenu();
@@ -273,15 +287,20 @@ export function InboxSortableCard({
     <article
       ref={setNodeRef}
       style={style}
-      className={`relative cursor-grab text-left active:cursor-grabbing ${inboxCardClass} ${isDragging ? "pointer-events-none" : ""}`}
+      className={`relative cursor-grab text-left active:cursor-grabbing ${inboxCardInteractiveClass} ${isDragging ? "pointer-events-none" : ""}`}
       {...attributes}
       {...listeners}
     >
       <div className="w-full pr-9">
+        {task.label?.kind === "preset" ? (
+          <div className="mb-2">
+            <CardLabelBadge label={task.label} />
+          </div>
+        ) : null}
         <h3 className="text-sm font-bold tracking-wide text-zinc-100">
           {task.title}
         </h3>
-        {task.label ? (
+        {task.label?.kind === "custom" ? (
           <div className="mt-1.5">
             <CardLabelBadge
               label={task.label}
@@ -496,8 +515,9 @@ export function InboxSortableCard({
                   Edit Labels
                 </h2>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Default colors are shown as dots on the card. Custom labels
-                  include a title and stay in this board&apos;s list.
+                  Default colors show as a slim bar above the title — tap the
+                  same color again to remove. Custom labels include a title and
+                  stay in this board&apos;s list.
                 </p>
                 {task.label ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -660,26 +680,41 @@ export function InboxSortableCard({
         : null}
     </article>
   );
-}
+});
 
 export function InboxCardPreview({ task }: { task: InboxTask }) {
   return (
     <article
-      className={`pointer-events-none w-[min(100vw-3rem,254px)] ${inboxCardClass} border-blue-400/50 shadow-[0_0_32px_rgba(59,130,246,0.3)]`}
+      className={`animate-card-drag-preview relative w-[min(100vw-3rem,254px)] cursor-grab pointer-events-none text-left ${inboxCardSurfaceClass}`}
     >
-      <h3 className="text-sm font-bold tracking-wide text-zinc-100">
-        {task.title}
-      </h3>
-      {task.label ? (
-        <div className="mt-1.5">
-          <CardLabelBadge label={task.label} />
-        </div>
-      ) : null}
-      {task.description ? (
-        <p className="mt-1 text-xs leading-snug text-zinc-400">
-          {task.description}
-        </p>
-      ) : null}
+      <div className="w-full pr-9">
+        {task.label?.kind === "preset" ? (
+          <div className="mb-2">
+            <CardLabelBadge label={task.label} />
+          </div>
+        ) : null}
+        <h3 className="text-sm font-bold tracking-wide text-zinc-100">
+          {task.title}
+        </h3>
+        {task.label?.kind === "custom" ? (
+          <div className="mt-1.5">
+            <CardLabelBadge label={task.label} />
+          </div>
+        ) : null}
+        {task.description ? (
+          <p className="mt-1 text-xs leading-snug text-zinc-400">
+            {task.description}
+          </p>
+        ) : null}
+      </div>
+      <div
+        className="pointer-events-none absolute right-2 top-2 z-10"
+        aria-hidden
+      >
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-zinc-950/90 text-zinc-400 opacity-50">
+          <MoreIcon />
+        </span>
+      </div>
     </article>
   );
 }
@@ -692,6 +727,8 @@ export function BoardInboxSection({
   onDuplicateInboxTask,
   workspaceCustomLabels,
   onAddWorkspaceCustomLabel,
+  dropIndicatorIndex,
+  dropSlotMinHeightPx,
 }: {
   tasks: InboxTask[];
   onAddInboxTask: (task: InboxTask) => void;
@@ -700,6 +737,10 @@ export function BoardInboxSection({
   onDuplicateInboxTask: (task: InboxTask) => void;
   workspaceCustomLabels: WorkspaceCustomLabel[];
   onAddWorkspaceCustomLabel: (label: WorkspaceCustomLabel) => void;
+  /** Show a card-shaped slot before the card at this index (or after the last card when `tasks.length`). */
+  dropIndicatorIndex: number | null;
+  /** Dragged card height for slot sizing (`active.rect.initial`); optional. */
+  dropSlotMinHeightPx?: number | null;
 }) {
   const { setNodeRef: setInboxDropRef, isOver: isInboxDropOver } = useDroppable({
     id: WORKSPACE_INBOX_ZONE_ID,
@@ -755,72 +796,85 @@ export function BoardInboxSection({
           >
             <div className="flex min-h-[min(70vh,720px)] max-h-[min(70vh,720px)] flex-col gap-2 overflow-y-auto pr-1">
               {tasks.length === 0 ? (
-                <p className="py-6 text-center text-[0.65rem] text-zinc-500">
-                  No tasks yet — drop cards here or add below.
-                </p>
+                <>
+                  {dropIndicatorIndex === 0 ? (
+                    <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
+                  ) : null}
+                  <p className="py-6 text-center text-[0.65rem] text-zinc-500">
+                    No tasks yet — drop cards here or add below.
+                  </p>
+                </>
+              ) : (
+                tasks.map((task, index) => (
+                  <Fragment key={task.id}>
+                    {dropIndicatorIndex === index ? (
+                      <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
+                    ) : null}
+                    <InboxSortableCard
+                      task={task}
+                      disabled={false}
+                      onUpdateTask={onUpdateInboxTask}
+                      onDeleteTask={onDeleteInboxTask}
+                      onDuplicateTask={onDuplicateInboxTask}
+                      workspaceCustomLabels={workspaceCustomLabels}
+                      onAddWorkspaceCustomLabel={onAddWorkspaceCustomLabel}
+                    />
+                  </Fragment>
+                ))
+              )}
+              {dropIndicatorIndex === tasks.length && tasks.length > 0 ? (
+                <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
               ) : null}
-              {tasks.map((task) => (
-                <InboxSortableCard
-                  key={task.id}
-                  task={task}
-                  disabled={false}
-                  onUpdateTask={onUpdateInboxTask}
-                  onDeleteTask={onDeleteInboxTask}
-                  onDuplicateTask={onDuplicateInboxTask}
-                  workspaceCustomLabels={workspaceCustomLabels}
-                  onAddWorkspaceCustomLabel={onAddWorkspaceCustomLabel}
-                />
-              ))}
+
+              <div className="mt-1 border-t border-white/10 pt-3">
+                {!showForm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(true)}
+                    className="w-full rounded-lg border border-dashed border-blue-400/45 bg-transparent py-2 text-xs font-bold uppercase tracking-widest text-zinc-300 shadow-[0_0_16px_rgba(59,130,246,0.12)] transition hover:border-cyan-400/60 hover:text-white"
+                  >
+                    Add card
+                  </button>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-2">
+                    <input
+                      required
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Title"
+                      className={inboxInputClass}
+                      maxLength={120}
+                      aria-label="Card title"
+                    />
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Description (optional)"
+                      rows={2}
+                      className={`${inboxInputClass} resize-none`}
+                      maxLength={500}
+                      aria-label="Card description"
+                    />
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="submit"
+                        className="flex-1 rounded-lg border border-blue-400/50 bg-blue-600/80 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition hover:bg-blue-500"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetForm}
+                        className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 py-2 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:bg-zinc-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </SortableContext>
-        </div>
-
-        <div className="mt-3 border-t border-white/10 pt-3">
-          {!showForm ? (
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="w-full rounded-lg border border-dashed border-blue-400/45 bg-transparent py-2 text-xs font-bold uppercase tracking-widest text-zinc-300 shadow-[0_0_16px_rgba(59,130,246,0.12)] transition hover:border-cyan-400/60 hover:text-white"
-            >
-              Add card
-            </button>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-2">
-              <input
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title"
-                className={inboxInputClass}
-                maxLength={120}
-                aria-label="Card title"
-              />
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description (optional)"
-                rows={2}
-                className={`${inboxInputClass} resize-none`}
-                maxLength={500}
-                aria-label="Card description"
-              />
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 rounded-lg border border-blue-400/50 bg-blue-600/80 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition hover:bg-blue-500"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 py-2 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:bg-zinc-800"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
         </div>
       </section>
     </aside>

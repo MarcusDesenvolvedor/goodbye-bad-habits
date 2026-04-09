@@ -9,15 +9,18 @@ import {
   closestCorners,
   useSensor,
   useSensors,
+  type Active,
   type DragEndEvent,
+  type DragMoveEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
+import { computeBoardDropIndicators } from "./board-dnd-preview";
 import {
   type ColumnTasks,
   type KanbanColumnId,
@@ -33,6 +36,15 @@ import {
 } from "./board-inbox";
 import type { WorkspaceCustomLabel } from "./board-labels";
 import { CardPreview, KanbanBoardSection } from "./board-kanban";
+
+function readActiveCardHeightPx(active: Active): number | null {
+  const initial = active.rect.current.initial;
+  const h = initial?.height;
+  if (h == null || !Number.isFinite(h) || h <= 0) {
+    return null;
+  }
+  return Math.round(h);
+}
 
 function findKanbanContainer(
   columns: ColumnTasks,
@@ -99,12 +111,19 @@ export function BoardWorkspace() {
     createMockKanbanColumns(),
   );
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [dndPointer, setDndPointer] = useState<{
+    activeId: string | null;
+    overId: string | null;
+  }>({ activeId: null, overId: null });
   const [selectedKanbanColumnId, setSelectedKanbanColumnId] =
     useState<KanbanColumnId | null>(null);
   const [workspaceCustomLabels, setWorkspaceCustomLabels] = useState<
     WorkspaceCustomLabel[]
   >([]);
+
+  const [dragSlotMinHeightPx, setDragSlotMinHeightPx] = useState<number | null>(
+    null,
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -114,6 +133,8 @@ export function BoardWorkspace() {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  const activeId = dndPointer.activeId;
 
   const activeInboxTask = useMemo(
     () => (activeId ? inboxTasks.find((t) => t.id === activeId) : undefined),
@@ -125,13 +146,48 @@ export function BoardWorkspace() {
     [activeId, columns],
   );
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
-  }
+  const dropIndicators = useMemo(
+    () =>
+      computeBoardDropIndicators(
+        inboxTasks.map((t) => t.id),
+        columns,
+        dndPointer.activeId,
+        dndPointer.overId,
+      ),
+    [inboxTasks, columns, dndPointer.activeId, dndPointer.overId],
+  );
 
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setDragSlotMinHeightPx(readActiveCardHeightPx(event.active));
+    setDndPointer({
+      activeId: String(event.active.id),
+      overId: null,
+    });
+  }, []);
+
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    setDragSlotMinHeightPx((prev) =>
+      prev != null ? prev : readActiveCardHeightPx(event.active),
+    );
+    const nextActive = String(event.active.id);
+    const nextOver = event.over ? String(event.over.id) : null;
+    setDndPointer((prev) => {
+      if (prev.activeId === nextActive && prev.overId === nextOver) {
+        return prev;
+      }
+      return { activeId: nextActive, overId: nextOver };
+    });
+  }, []);
+
+  const handleDragCancel = useCallback(() => {
+    setDragSlotMinHeightPx(null);
+    setDndPointer({ activeId: null, overId: null });
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
+    setDragSlotMinHeightPx(null);
+    setDndPointer({ activeId: null, overId: null });
     if (!over) {
       return;
     }
@@ -290,30 +346,33 @@ export function BoardWorkspace() {
       }
       return next;
     });
-  }
+  }, [inboxTasks, columns]);
 
-  function handleAddKanbanCard(columnId: KanbanColumnId, task: KanbanTask) {
-    setColumns((prev) => ({
-      ...prev,
-      [columnId]: [...prev[columnId], task],
-    }));
-  }
+  const handleAddKanbanCard = useCallback(
+    (columnId: KanbanColumnId, task: KanbanTask) => {
+      setColumns((prev) => ({
+        ...prev,
+        [columnId]: [...prev[columnId], task],
+      }));
+    },
+    [],
+  );
 
-  function handleAddInboxTask(task: InboxTask) {
+  const handleAddInboxTask = useCallback((task: InboxTask) => {
     setInboxTasks((prev) => [...prev, task]);
-  }
+  }, []);
 
-  function handleUpdateInboxTask(updated: InboxTask) {
+  const handleUpdateInboxTask = useCallback((updated: InboxTask) => {
     setInboxTasks((prev) =>
       prev.map((t) => (t.id === updated.id ? updated : t)),
     );
-  }
+  }, []);
 
-  function handleDeleteInboxTask(id: string) {
+  const handleDeleteInboxTask = useCallback((id: string) => {
     setInboxTasks((prev) => prev.filter((t) => t.id !== id));
-  }
+  }, []);
 
-  function handleDuplicateInboxTask(task: InboxTask) {
+  const handleDuplicateInboxTask = useCallback((task: InboxTask) => {
     if (selectedKanbanColumnId) {
       const kanbanTask: KanbanTask = {
         id: `mock-${crypto.randomUUID()}`,
@@ -338,28 +397,33 @@ export function BoardWorkspace() {
       comments: task.comments?.length ? [...task.comments] : undefined,
     };
     setInboxTasks((prev) => [...prev, copy]);
-  }
+  }, [selectedKanbanColumnId]);
 
-  function handleSelectKanbanColumn(columnId: KanbanColumnId) {
+  const handleSelectKanbanColumn = useCallback((columnId: KanbanColumnId) => {
     setSelectedKanbanColumnId((prev) =>
       prev === columnId ? null : columnId,
     );
-  }
+  }, []);
 
-  function handleAddWorkspaceCustomLabel(entry: WorkspaceCustomLabel) {
-    setWorkspaceCustomLabels((prev) => {
-      if (prev.some((p) => p.id === entry.id)) {
-        return prev;
-      }
-      return [...prev, entry];
-    });
-  }
+  const handleAddWorkspaceCustomLabel = useCallback(
+    (entry: WorkspaceCustomLabel) => {
+      setWorkspaceCustomLabels((prev) => {
+        if (prev.some((p) => p.id === entry.id)) {
+          return prev;
+        }
+        return [...prev, entry];
+      });
+    },
+    [],
+  );
 
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragCancel={handleDragCancel}
       onDragEnd={handleDragEnd}
     >
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -371,6 +435,8 @@ export function BoardWorkspace() {
           onDuplicateInboxTask={handleDuplicateInboxTask}
           workspaceCustomLabels={workspaceCustomLabels}
           onAddWorkspaceCustomLabel={handleAddWorkspaceCustomLabel}
+          dropIndicatorIndex={dropIndicators.inbox}
+          dropSlotMinHeightPx={dragSlotMinHeightPx}
         />
         <div className="min-w-0 flex-1">
           <KanbanBoardSection
@@ -378,6 +444,12 @@ export function BoardWorkspace() {
             onAddCard={handleAddKanbanCard}
             selectedColumnId={selectedKanbanColumnId}
             onSelectColumn={handleSelectKanbanColumn}
+            columnDropIndicators={{
+              todo: dropIndicators.todo,
+              "in-progress": dropIndicators["in-progress"],
+              done: dropIndicators.done,
+            }}
+            dropSlotMinHeightPx={dragSlotMinHeightPx}
           />
         </div>
       </div>

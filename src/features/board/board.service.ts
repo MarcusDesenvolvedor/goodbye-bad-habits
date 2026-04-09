@@ -13,6 +13,7 @@ function toBoardJson(board: Board): BoardJson {
 }
 
 export async function listBoardsForUser(userId: string): Promise<BoardJson[]> {
+  await boardRepository.ensureDefaultBoardIfEmpty(userId);
   const boards = await boardRepository.findBoardsByUserId(userId);
   return boards.map(toBoardJson);
 }

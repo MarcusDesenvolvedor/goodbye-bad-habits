@@ -86,6 +86,12 @@ export function MyBoardsPanel() {
       setLoadError("Could not delete board.");
       return;
     }
+    const listRes = await fetch("/api/boards", { credentials: "include" });
+    const listParsed = await parseJsonResponse(listRes);
+    if (listParsed.ok && Array.isArray(listParsed.data)) {
+      setBoards(listParsed.data as BoardJson[]);
+      return;
+    }
     setBoards((prev) => (prev ? prev.filter((b) => b.id !== boardId) : prev));
   }
 

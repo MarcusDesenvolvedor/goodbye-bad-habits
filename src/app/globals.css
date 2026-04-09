@@ -29,3 +29,21 @@ body {
   color: var(--stitch-text);
   font-family: var(--font-bauhaus-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Drag overlay previews (Kanban + Inbox) — soft pulse while dragging */
+@keyframes card-drag-preview-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.62;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.88;
+  }
+}
+
+.animate-card-drag-preview {
+  animation: card-drag-preview-pulse 1s ease-in-out infinite;
+  will-change: transform, opacity;
+}
