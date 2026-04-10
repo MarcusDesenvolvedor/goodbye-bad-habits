@@ -30,20 +30,20 @@ body {
   font-family: var(--font-bauhaus-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Drag overlay previews (Kanban + Inbox) — soft pulse while dragging */
-@keyframes card-drag-preview-pulse {
+/* Drop placeholder (where the card will land) — soft pulse while dragging */
+@keyframes card-drop-slot-pulse {
   0%,
   100% {
     transform: scale(1);
-    opacity: 0.62;
+    opacity: 0.55;
   }
   50% {
     transform: scale(1.02);
-    opacity: 0.88;
+    opacity: 0.85;
   }
 }
 
-.animate-card-drag-preview {
-  animation: card-drag-preview-pulse 1s ease-in-out infinite;
+.animate-card-drop-slot {
+  animation: card-drop-slot-pulse 1s ease-in-out infinite;
   will-change: transform, opacity;
 }

@@ -685,7 +685,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
 export function InboxCardPreview({ task }: { task: InboxTask }) {
   return (
     <article
-      className={`animate-card-drag-preview relative w-[min(100vw-3rem,254px)] cursor-grab pointer-events-none text-left ${inboxCardSurfaceClass}`}
+      className={`relative w-[min(100vw-3rem,254px)] cursor-grab pointer-events-none text-left opacity-[0.65] ${inboxCardSurfaceClass}`}
     >
       <div className="w-full pr-9">
         {task.label?.kind === "preset" ? (

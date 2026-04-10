@@ -113,7 +113,7 @@ const SortableCard = memo(function SortableCard({
 export function CardPreview({ task }: { task: KanbanTask }) {
   return (
     <article
-      className={`animate-card-drag-preview pointer-events-none w-[min(100vw-3rem,254px)] ${kanbanCardSurfaceClass}`}
+      className={`pointer-events-none w-[min(100vw-3rem,254px)] opacity-[0.65] ${kanbanCardSurfaceClass}`}
     >
       <div className="w-full cursor-grab text-left active:cursor-grabbing">
         {task.label?.kind === "preset" ? (
