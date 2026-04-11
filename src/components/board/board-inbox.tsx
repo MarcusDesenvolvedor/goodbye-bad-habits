@@ -127,7 +127,6 @@ export const InboxSortableCard = memo(function InboxSortableCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0 : undefined,
   };
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -287,11 +286,15 @@ export const InboxSortableCard = memo(function InboxSortableCard({
     <article
       ref={setNodeRef}
       style={style}
-      className={`relative cursor-grab text-left active:cursor-grabbing ${inboxCardInteractiveClass} ${isDragging ? "pointer-events-none" : ""}`}
+      className={
+        isDragging
+          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-cyan-400/50 bg-zinc-900/40 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm"
+          : `group/card relative z-0 cursor-grab text-left hover:z-10 active:cursor-grabbing ${inboxCardInteractiveClass}`
+      }
       {...attributes}
       {...listeners}
     >
-      <div className="w-full pr-9">
+      <div className={isDragging ? "invisible" : "w-full pr-9"}>
         {task.label?.kind === "preset" ? (
           <div className="mb-2">
             <CardLabelBadge label={task.label} />
@@ -310,34 +313,31 @@ export const InboxSortableCard = memo(function InboxSortableCard({
             />
           </div>
         ) : null}
-        {task.description ? (
-          <p className="mt-1 text-xs leading-snug text-zinc-400">
-            {task.description}
-          </p>
-        ) : null}
       </div>
 
-      <div className="absolute right-2 top-2 z-10">
-        <button
-          ref={menuTriggerRef}
-          type="button"
-          aria-expanded={menuOpen}
-          aria-haspopup="menu"
-          aria-label="Card actions"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-zinc-950/90 text-zinc-400 transition hover:border-white/20 hover:text-zinc-100"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            if (menuOpen) {
-              setMenuCoords(null);
-            }
-            setMenuOpen((open) => !open);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <MoreIcon />
-        </button>
-      </div>
+      {!isDragging && (
+        <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover/card:opacity-100">
+          <button
+            ref={menuTriggerRef}
+            type="button"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            aria-label="Card actions"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-zinc-950/90 text-zinc-400 transition hover:border-white/20 hover:text-zinc-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (menuOpen) {
+                setMenuCoords(null);
+              }
+              setMenuOpen((open) => !open);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <MoreIcon />
+          </button>
+        </div>
+      )}
 
       {hydrated && menuOpen && menuCoords
         ? createPortal(
@@ -687,7 +687,7 @@ export function InboxCardPreview({ task }: { task: InboxTask }) {
     <article
       className={`relative w-[min(100vw-3rem,254px)] cursor-grab pointer-events-none text-left opacity-[0.65] ${inboxCardSurfaceClass}`}
     >
-      <div className="w-full pr-9">
+      <div className="w-full">
         {task.label?.kind === "preset" ? (
           <div className="mb-2">
             <CardLabelBadge label={task.label} />
@@ -701,19 +701,6 @@ export function InboxCardPreview({ task }: { task: InboxTask }) {
             <CardLabelBadge label={task.label} />
           </div>
         ) : null}
-        {task.description ? (
-          <p className="mt-1 text-xs leading-snug text-zinc-400">
-            {task.description}
-          </p>
-        ) : null}
-      </div>
-      <div
-        className="pointer-events-none absolute right-2 top-2 z-10"
-        aria-hidden
-      >
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-zinc-950/90 text-zinc-400 opacity-50">
-          <MoreIcon />
-        </span>
       </div>
     </article>
   );
@@ -748,11 +735,9 @@ export function BoardInboxSection({
 
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
 
   function resetForm() {
     setTitle("");
-    setDescription("");
     setShowForm(false);
   }
 
@@ -765,7 +750,7 @@ export function BoardInboxSection({
     onAddInboxTask({
       id: `inbox-${crypto.randomUUID()}`,
       title: trimmed,
-      description: description.trim(),
+      description: "",
     });
     resetForm();
   }
@@ -776,7 +761,7 @@ export function BoardInboxSection({
       aria-label="Inbox"
     >
       <section className="rounded-2xl border border-white/10 bg-[var(--stitch-surface)] p-4 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-md lg:p-5">
-        <div className="mb-3 border-b border-white/10 pb-2">
+        <div className="relative z-0 mb-3 border-b border-white/10 pb-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Inbox
           </h2>
@@ -794,7 +779,7 @@ export function BoardInboxSection({
             items={tasks.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex min-h-[min(70vh,720px)] max-h-[min(70vh,720px)] flex-col gap-2 overflow-y-auto pr-1">
+            <div className="flex min-h-[min(70vh,720px)] max-h-[min(70vh,720px)] flex-col gap-2 overflow-y-auto pb-4 pr-1">
               {tasks.length === 0 ? (
                 <>
                   {dropIndicatorIndex === 0 ? (
@@ -826,50 +811,30 @@ export function BoardInboxSection({
                 <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
               ) : null}
 
-              <div className="mt-1 border-t border-white/10 pt-3">
+              <div className="mt-1">
                 {!showForm ? (
                   <button
                     type="button"
                     onClick={() => setShowForm(true)}
-                    className="w-full rounded-lg border border-dashed border-blue-400/45 bg-transparent py-2 text-xs font-bold uppercase tracking-widest text-zinc-300 shadow-[0_0_16px_rgba(59,130,246,0.12)] transition hover:border-cyan-400/60 hover:text-white"
+                    className={`w-full cursor-pointer text-left ${inboxCardSurfaceClass} text-sm font-bold tracking-wide text-zinc-500 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:text-zinc-300 hover:shadow-[0_12px_36px_rgba(0,0,0,0.5)]`}
                   >
-                    Add card
+                    + Add card
                   </button>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-2">
+                  <form onSubmit={handleSubmit} className={inboxCardSurfaceClass}>
                     <input
-                      required
+                      autoFocus
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Title"
-                      className={inboxInputClass}
+                      placeholder="Card title…"
+                      className="w-full bg-transparent text-sm font-bold tracking-wide text-zinc-100 outline-none placeholder:text-zinc-500"
                       maxLength={120}
                       aria-label="Card title"
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") resetForm();
+                      }}
+                      onBlur={resetForm}
                     />
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Description (optional)"
-                      rows={2}
-                      className={`${inboxInputClass} resize-none`}
-                      maxLength={500}
-                      aria-label="Card description"
-                    />
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        type="submit"
-                        className="flex-1 rounded-lg border border-blue-400/50 bg-blue-600/80 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition hover:bg-blue-500"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetForm}
-                        className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 py-2 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:bg-zinc-800"
-                      >
-                        Cancel
-                      </button>
-                    </div>
                   </form>
                 )}
               </div>

@@ -67,36 +67,9 @@ export function computeBoardDropIndicators(
     out[col] = index;
   }
 
-  // Preview only on the list that would receive the drop (or reorder target).
+  // Same-container reorder: useSortable handles visual displacement via CSS
+  // transforms, so we skip the drop slot entirely to avoid double gaps.
   if (activeContainer === overContainer) {
-    if (activeContainer === "inbox") {
-      if (activeId === overId) {
-        return out;
-      }
-      if (overId === INBOX_DROP_ZONE_ID) {
-        setInbox(inboxIds.length);
-        return out;
-      }
-      const overIdx = inboxIds.indexOf(overId);
-      if (overIdx >= 0) {
-        setInbox(overIdx);
-      }
-      return out;
-    }
-
-    const col = activeContainer;
-    const ids = columns[col].map((t) => t.id);
-    if (activeId === overId) {
-      return out;
-    }
-    if (overId === col) {
-      setColumn(col, ids.length);
-      return out;
-    }
-    const overIdx = ids.indexOf(overId);
-    if (overIdx >= 0) {
-      setColumn(col, overIdx);
-    }
     return out;
   }
 

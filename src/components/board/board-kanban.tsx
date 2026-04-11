@@ -49,20 +49,25 @@ const SortableCard = memo(function SortableCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0 : undefined,
   };
 
   return (
     <article
       ref={setNodeRef}
       style={style}
-      className={`${kanbanCardInteractiveClass} ${
-        isDragging ? "pointer-events-none" : ""
-      }`}
+      className={
+        isDragging
+          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-cyan-400/50 bg-zinc-900/40 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm"
+          : `z-0 hover:z-10 ${kanbanCardInteractiveClass}`
+      }
     >
       <button
         type="button"
-        className="w-full cursor-grab text-left active:cursor-grabbing"
+        className={
+          isDragging
+            ? "invisible w-full"
+            : "w-full cursor-grab text-left active:cursor-grabbing"
+        }
         {...attributes}
         {...listeners}
       >
@@ -78,11 +83,6 @@ const SortableCard = memo(function SortableCard({
           <div className="mt-1.5">
             <CardLabelBadge label={task.label} />
           </div>
-        ) : null}
-        {task.description ? (
-          <p className="mt-1 text-xs leading-snug text-zinc-400">
-            {task.description}
-          </p>
         ) : null}
         {task.tags.length > 0 ? (
           <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -128,11 +128,6 @@ export function CardPreview({ task }: { task: KanbanTask }) {
           <div className="mt-1.5">
             <CardLabelBadge label={task.label} />
           </div>
-        ) : null}
-        {task.description ? (
-          <p className="mt-1 text-xs leading-snug text-zinc-400">
-            {task.description}
-          </p>
         ) : null}
         {task.tags.length > 0 ? (
           <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -181,34 +176,22 @@ const KanbanColumn = memo(function KanbanColumn({
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [tagsRaw, setTagsRaw] = useState("");
-  const [dueAt, setDueAt] = useState("");
 
   function resetForm() {
     setTitle("");
-    setDescription("");
-    setTagsRaw("");
-    setDueAt("");
     setShowForm(false);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = title.trim();
-    if (!trimmed) {
-      return;
-    }
-    const tags = tagsRaw
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    if (!trimmed) return;
     onAddCard(columnId, {
       id: `mock-${crypto.randomUUID()}`,
       title: trimmed,
-      description: description.trim(),
-      tags,
-      dueAt: dueAt.trim() || undefined,
+      description: "",
+      tags: [],
+      dueAt: undefined,
     });
     resetForm();
   }
@@ -247,7 +230,7 @@ const KanbanColumn = memo(function KanbanColumn({
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 pb-6">
         <SortableContext
           items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
@@ -279,64 +262,30 @@ const KanbanColumn = memo(function KanbanColumn({
           ) : null}
         </SortableContext>
 
-        <div className="mt-auto border-t border-white/10 pt-3">
+        <div className="mt-auto pt-3">
           {!showForm ? (
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="w-full rounded-lg border border-dashed border-blue-400/45 bg-transparent py-2.5 text-xs font-bold uppercase tracking-widest text-zinc-300 shadow-[0_0_16px_rgba(59,130,246,0.12)] transition hover:border-cyan-400/60 hover:text-white"
+              className={`w-full cursor-pointer text-left ${kanbanCardSurfaceClass} text-sm font-bold tracking-wide text-zinc-500 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:text-zinc-300 hover:shadow-[0_12px_36px_rgba(0,0,0,0.5)]`}
             >
               + Add card
             </button>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-2">
+            <form onSubmit={handleSubmit} className={kanbanCardSurfaceClass}>
               <input
-                required
+                autoFocus
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title"
-                className="w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50"
+                placeholder="Card title…"
+                className="w-full bg-transparent text-sm font-bold tracking-wide text-zinc-100 outline-none placeholder:text-zinc-500"
                 maxLength={120}
                 aria-label="Card title"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") resetForm();
+                }}
+                onBlur={resetForm}
               />
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Short description"
-                rows={2}
-                className="w-full resize-none rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50"
-                maxLength={500}
-                aria-label="Card description"
-              />
-              <input
-                value={tagsRaw}
-                onChange={(e) => setTagsRaw(e.target.value)}
-                placeholder="Tags (comma separated)"
-                className="w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50"
-                aria-label="Tags"
-              />
-              <input
-                type="date"
-                value={dueAt}
-                onChange={(e) => setDueAt(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:ring-2 focus:ring-blue-500/50"
-                aria-label="Due date"
-              />
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 rounded-lg border border-blue-400/50 bg-blue-600/80 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition hover:bg-blue-500"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 py-2 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:bg-zinc-800"
-                >
-                  Cancel
-                </button>
-              </div>
             </form>
           )}
         </div>
