@@ -1,6 +1,6 @@
 import type { CardLabel } from "./board-labels";
 
-export type KanbanColumnId = "todo" | "in-progress" | "done";
+export type KanbanColumnId = string;
 
 export type KanbanTask = {
   id: string;
@@ -12,19 +12,21 @@ export type KanbanTask = {
   dueAt?: string;
 };
 
-export type ColumnTasks = Record<KanbanColumnId, KanbanTask[]>;
+export type ColumnTasks = Record<string, KanbanTask[]>;
 
-export const KANBAN_COLUMN_ORDER: KanbanColumnId[] = [
+export type ColumnMeta = {
+  title: string;
+  accentBarClass: string;
+  columnShellClass: string;
+};
+
+export const KANBAN_COLUMN_ORDER: string[] = [
   "todo",
   "in-progress",
   "done",
 ];
 
-/** Column chrome aligned with Stitch preview: neon blue columns + purple “review-style” accent for done. */
-export const KANBAN_COLUMN_META: Record<
-  KanbanColumnId,
-  { title: string; accentBarClass: string; columnShellClass: string }
-> = {
+export const KANBAN_COLUMN_META: Record<string, ColumnMeta> = {
   todo: {
     title: "To do",
     accentBarClass:
@@ -47,6 +49,27 @@ export const KANBAN_COLUMN_META: Record<
       "rounded-2xl border border-violet-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(167,139,250,0.16)] backdrop-blur-md",
   },
 };
+
+export const NEW_LIST_ACCENT_POOL: Omit<ColumnMeta, "title">[] = [
+  {
+    accentBarClass:
+      "bg-gradient-to-r from-emerald-500 via-green-400 to-teal-400 opacity-90 shadow-[0_0_12px_rgba(16,185,129,0.5)]",
+    columnShellClass:
+      "rounded-2xl border border-emerald-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(16,185,129,0.14)] backdrop-blur-md",
+  },
+  {
+    accentBarClass:
+      "bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-400 opacity-90 shadow-[0_0_12px_rgba(245,158,11,0.5)]",
+    columnShellClass:
+      "rounded-2xl border border-amber-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(245,158,11,0.14)] backdrop-blur-md",
+  },
+  {
+    accentBarClass:
+      "bg-gradient-to-r from-rose-500 via-pink-400 to-fuchsia-400 opacity-90 shadow-[0_0_12px_rgba(244,63,94,0.5)]",
+    columnShellClass:
+      "rounded-2xl border border-rose-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(244,63,94,0.14)] backdrop-blur-md",
+  },
+];
 
 export const TAG_PILL_CLASSES = [
   "border border-blue-400/45 bg-blue-500/15 text-sky-200 shadow-[0_0_10px_rgba(59,130,246,0.2)]",

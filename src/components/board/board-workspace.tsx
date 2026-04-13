@@ -1,15 +1,17 @@
 "use client";
 
-import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { restrictToHorizontalAxis, snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
+  pointerWithin,
+  closestCenter,
   useSensor,
   useSensors,
   type Active,
+  type CollisionDetection,
   type DragEndEvent,
   type DragMoveEvent,
   type DragOverEvent,
@@ -19,14 +21,17 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type RefObject } from "react";
 
 import { computeBoardDropIndicators } from "./board-dnd-preview";
 import {
+  type ColumnMeta,
   type ColumnTasks,
   type KanbanColumnId,
   type KanbanTask,
+  KANBAN_COLUMN_META,
   KANBAN_COLUMN_ORDER,
+  NEW_LIST_ACCENT_POOL,
   createMockKanbanColumns,
 } from "./board-kanban-mock";
 import {
@@ -36,7 +41,7 @@ import {
   type InboxTask,
 } from "./board-inbox";
 import type { WorkspaceCustomLabel } from "./board-labels";
-import { CardPreview, KanbanBoardSection } from "./board-kanban";
+import { CardPreview, ColumnDragPreview, KanbanBoardSection } from "./board-kanban";
 
 function readActiveCardHeightPx(active: Active): number | null {
   const initial = active.rect.current.initial;
@@ -48,14 +53,15 @@ function readActiveCardHeightPx(active: Active): number | null {
 }
 
 function findKanbanContainer(
+  columnOrder: string[],
   columns: ColumnTasks,
   id: string,
 ): KanbanColumnId | undefined {
-  if (KANBAN_COLUMN_ORDER.includes(id as KanbanColumnId)) {
-    return id as KanbanColumnId;
+  if (columnOrder.includes(id)) {
+    return id;
   }
-  for (const col of KANBAN_COLUMN_ORDER) {
-    if (columns[col].some((t) => t.id === id)) {
+  for (const col of columnOrder) {
+    if (columns[col]?.some((t) => t.id === id)) {
       return col;
     }
   }
@@ -63,11 +69,12 @@ function findKanbanContainer(
 }
 
 function findKanbanTask(
+  columnOrder: string[],
   columns: ColumnTasks,
   taskId: string,
 ): KanbanTask | undefined {
-  for (const col of KANBAN_COLUMN_ORDER) {
-    const t = columns[col].find((c) => c.id === taskId);
+  for (const col of columnOrder) {
+    const t = columns[col]?.find((c) => c.id === taskId);
     if (t) {
       return t;
     }
@@ -77,6 +84,7 @@ function findKanbanTask(
 
 function findWorkspaceContainer(
   inboxTasks: InboxTask[],
+  columnOrder: string[],
   columns: ColumnTasks,
   id: string,
 ): "inbox" | KanbanColumnId | undefined {
@@ -86,7 +94,29 @@ function findWorkspaceContainer(
   if (inboxTasks.some((t) => t.id === id)) {
     return "inbox";
   }
-  return findKanbanContainer(columns, id);
+  return findKanbanContainer(columnOrder, columns, id);
+}
+
+function createColumnAwareCollision(
+  dragTypeRef: RefObject<"card" | "column" | null>,
+  stateRef: RefObject<{ columnOrder: string[] }>,
+): CollisionDetection {
+  return (args) => {
+    const columnOnly = {
+      ...args,
+      droppableContainers: args.droppableContainers.filter((c) =>
+        stateRef.current.columnOrder.includes(String(c.id)),
+      ),
+    };
+
+    if (dragTypeRef.current === "column") {
+      const pw = pointerWithin(columnOnly);
+      return pw.length > 0 ? pw : closestCenter(columnOnly);
+    }
+
+    const pw = pointerWithin(args);
+    return pw.length > 0 ? pw : closestCenter(args);
+  };
 }
 
 export function BoardWorkspace() {
@@ -112,6 +142,14 @@ export function BoardWorkspace() {
     createMockKanbanColumns(),
   );
 
+  const [columnOrder, setColumnOrder] = useState<string[]>(
+    () => [...KANBAN_COLUMN_ORDER],
+  );
+
+  const [columnMeta, setColumnMeta] = useState<Record<string, ColumnMeta>>(
+    () => ({ ...KANBAN_COLUMN_META }),
+  );
+
   const [dndPointer, setDndPointer] = useState<{
     activeId: string | null;
     overId: string | null;
@@ -135,12 +173,20 @@ export function BoardWorkspace() {
     }),
   );
 
-  const stateRef = useRef({ inboxTasks, columns });
-  stateRef.current = { inboxTasks, columns };
+  const stateRef = useRef({ inboxTasks, columns, columnOrder });
+  stateRef.current = { inboxTasks, columns, columnOrder };
+
+  const dragTypeRef = useRef<"card" | "column" | null>(null);
+
+  const columnAwareCollision = useMemo(
+    () => createColumnAwareCollision(dragTypeRef, stateRef),
+    [],
+  );
 
   const dragSnapshotRef = useRef<{
     inboxTasks: InboxTask[];
     columns: ColumnTasks;
+    columnOrder: string[];
   } | null>(null);
 
   const activeContainerRef = useRef<"inbox" | KanbanColumnId | null>(null);
@@ -163,8 +209,31 @@ export function BoardWorkspace() {
   );
 
   const activeKanbanTask = useMemo(
-    () => (activeId ? findKanbanTask(columns, activeId) : undefined),
-    [activeId, columns],
+    () =>
+      activeId && dragTypeRef.current !== "column"
+        ? findKanbanTask(columnOrder, columns, activeId)
+        : undefined,
+    [activeId, columnOrder, columns],
+  );
+
+  const activeColumnForDrag = useMemo(() => {
+    if (!activeId || dragTypeRef.current !== "column") return undefined;
+    return columnOrder.includes(activeId) ? activeId : undefined;
+  }, [activeId, columnOrder]);
+
+  const isColumnDrag = !!activeColumnForDrag;
+
+  const dndContextModifiers = useMemo(
+    () => (isColumnDrag ? [restrictToHorizontalAxis] : []),
+    [isColumnDrag],
+  );
+
+  const overlayModifiers = useMemo(
+    () =>
+      isColumnDrag
+        ? [snapCenterToCursor, restrictToHorizontalAxis]
+        : [snapCenterToCursor],
+    [isColumnDrag],
   );
 
   const dropIndicators = useMemo(
@@ -172,30 +241,41 @@ export function BoardWorkspace() {
       computeBoardDropIndicators(
         inboxTasks.map((t) => t.id),
         columns,
+        columnOrder,
         dndPointer.activeId,
         dndPointer.overId,
       ),
-    [inboxTasks, columns, dndPointer.activeId, dndPointer.overId],
+    [inboxTasks, columns, columnOrder, dndPointer.activeId, dndPointer.overId],
   );
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
       const id = String(event.active.id);
 
+      const isColumnDrag = columnOrder.includes(id);
+      dragTypeRef.current = isColumnDrag ? "column" : "card";
+
       dragSnapshotRef.current = {
         inboxTasks: inboxTasks.map((t) => ({ ...t })),
-        columns: {
-          todo: columns.todo.map((t) => ({ ...t })),
-          "in-progress": columns["in-progress"].map((t) => ({ ...t })),
-          done: columns.done.map((t) => ({ ...t })),
-        },
+        columns: Object.fromEntries(
+          columnOrder.map((col) => [col, (columns[col] ?? []).map((t) => ({ ...t }))])
+        ),
+        columnOrder: [...columnOrder],
       };
 
+      if (isColumnDrag) {
+        activeContainerRef.current = null;
+        activeDragTaskRef.current = null;
+        setDragSlotMinHeightPx(null);
+        setDndPointer({ activeId: id, overId: null });
+        return;
+      }
+
       activeContainerRef.current =
-        findWorkspaceContainer(inboxTasks, columns, id) ?? null;
+        findWorkspaceContainer(inboxTasks, columnOrder, columns, id) ?? null;
 
       const inboxT = inboxTasks.find((t) => t.id === id);
-      const kanbanT = findKanbanTask(columns, id);
+      const kanbanT = findKanbanTask(columnOrder, columns, id);
       activeDragTaskRef.current = {
         id,
         title: inboxT?.title ?? kanbanT?.title ?? "",
@@ -209,10 +289,12 @@ export function BoardWorkspace() {
       setDragSlotMinHeightPx(readActiveCardHeightPx(event.active));
       setDndPointer({ activeId: id, overId: null });
     },
-    [inboxTasks, columns],
+    [inboxTasks, columns, columnOrder],
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    if (dragTypeRef.current === "column") return;
+
     setDragSlotMinHeightPx((prev) =>
       prev != null ? prev : readActiveCardHeightPx(event.active),
     );
@@ -230,6 +312,21 @@ export function BoardWorkspace() {
     const { active, over } = event;
     if (!over) return;
 
+    if (dragTypeRef.current === "column") {
+      const activeIdStr = String(active.id);
+      const overIdStr = String(over.id);
+      if (activeIdStr === overIdStr) return;
+
+      const curOrder = stateRef.current.columnOrder;
+      if (!curOrder.includes(overIdStr)) return;
+      const oldIdx = curOrder.indexOf(activeIdStr);
+      const newIdx = curOrder.indexOf(overIdStr);
+      if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) return;
+
+      setColumnOrder(arrayMove(curOrder, oldIdx, newIdx));
+      return;
+    }
+
     const activeIdStr = String(active.id);
     const overIdStr = String(over.id);
     if (activeIdStr === overIdStr) return;
@@ -240,8 +337,14 @@ export function BoardWorkspace() {
     const dragTask = activeDragTaskRef.current;
     if (!dragTask) return;
 
-    const { inboxTasks: curInbox, columns: curColumns } = stateRef.current;
-    const overContainer = findWorkspaceContainer(curInbox, curColumns, overIdStr);
+    const { inboxTasks: curInbox, columns: curColumns, columnOrder: curOrder } =
+      stateRef.current;
+    const overContainer = findWorkspaceContainer(
+      curInbox,
+      curOrder,
+      curColumns,
+      overIdStr,
+    );
     if (!overContainer || activeContainer === overContainer) return;
 
     activeContainerRef.current = overContainer;
@@ -258,9 +361,9 @@ export function BoardWorkspace() {
       setInboxTasks((prev) => prev.filter((t) => t.id !== activeIdStr));
       const targetCol = overContainer as KanbanColumnId;
       setColumns((prev) => {
-        if (prev[targetCol].some((t) => t.id === activeIdStr)) return prev;
-        const to = [...prev[targetCol]];
-        if (KANBAN_COLUMN_ORDER.includes(overIdStr as KanbanColumnId)) {
+        if (prev[targetCol]?.some((t) => t.id === activeIdStr)) return prev;
+        const to = [...(prev[targetCol] ?? [])];
+        if (curOrder.includes(overIdStr)) {
           to.push(kanbanTask);
         } else {
           const idx = to.findIndex((t) => t.id === overIdStr);
@@ -282,7 +385,7 @@ export function BoardWorkspace() {
       const srcCol = activeContainer as KanbanColumnId;
       setColumns((prev) => ({
         ...prev,
-        [srcCol]: prev[srcCol].filter((t) => t.id !== activeIdStr),
+        [srcCol]: (prev[srcCol] ?? []).filter((t) => t.id !== activeIdStr),
       }));
       setInboxTasks((prev) => {
         if (prev.some((t) => t.id === activeIdStr)) return prev;
@@ -301,12 +404,12 @@ export function BoardWorkspace() {
     const fromCol = activeContainer as KanbanColumnId;
     const toCol = overContainer as KanbanColumnId;
     setColumns((prev) => {
-      const task = prev[fromCol].find((t) => t.id === activeIdStr);
+      const task = (prev[fromCol] ?? []).find((t) => t.id === activeIdStr);
       if (!task) return prev;
-      if (prev[toCol].some((t) => t.id === activeIdStr)) return prev;
-      const from = prev[fromCol].filter((t) => t.id !== activeIdStr);
-      const to = [...prev[toCol]];
-      if (KANBAN_COLUMN_ORDER.includes(overIdStr as KanbanColumnId)) {
+      if ((prev[toCol] ?? []).some((t) => t.id === activeIdStr)) return prev;
+      const from = (prev[fromCol] ?? []).filter((t) => t.id !== activeIdStr);
+      const to = [...(prev[toCol] ?? [])];
+      if (curOrder.includes(overIdStr)) {
         to.push(task);
       } else {
         const idx = to.findIndex((t) => t.id === overIdStr);
@@ -320,29 +423,37 @@ export function BoardWorkspace() {
     if (dragSnapshotRef.current) {
       setInboxTasks(dragSnapshotRef.current.inboxTasks);
       setColumns(dragSnapshotRef.current.columns);
+      setColumnOrder(dragSnapshotRef.current.columnOrder);
     }
     dragSnapshotRef.current = null;
     activeContainerRef.current = null;
     activeDragTaskRef.current = null;
+    dragTypeRef.current = null;
     setDragSlotMinHeightPx(null);
     setDndPointer({ activeId: null, overId: null });
   }, []);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
+    const wasColumnDrag = dragTypeRef.current === "column";
     const savedContainer = activeContainerRef.current;
 
     dragSnapshotRef.current = null;
     activeContainerRef.current = null;
     activeDragTaskRef.current = null;
+    dragTypeRef.current = null;
     setDragSlotMinHeightPx(null);
     setDndPointer({ activeId: null, overId: null });
 
-    if (!over || !savedContainer) return;
+    if (!over) return;
 
     const activeIdStr = String(active.id);
     const overIdStr = String(over.id);
     if (activeIdStr === overIdStr) return;
+
+    if (wasColumnDrag) return;
+
+    if (!savedContainer) return;
 
     if (savedContainer === "inbox") {
       setInboxTasks((prev) => {
@@ -368,10 +479,42 @@ export function BoardWorkspace() {
     (columnId: KanbanColumnId, task: KanbanTask) => {
       setColumns((prev) => ({
         ...prev,
-        [columnId]: [...prev[columnId], task],
+        [columnId]: [...(prev[columnId] ?? []), task],
       }));
     },
     [],
+  );
+
+  const handleRenameColumn = useCallback(
+    (columnId: KanbanColumnId, title: string) => {
+      setColumnMeta((prev) => {
+        const existing = prev[columnId];
+        if (!existing) return prev;
+        return { ...prev, [columnId]: { ...existing, title } };
+      });
+    },
+    [],
+  );
+
+  const handleAddColumn = useCallback(
+    (title: string) => {
+      const id = `list-${crypto.randomUUID()}`;
+      const accentIndex =
+        (columnOrder.length - KANBAN_COLUMN_ORDER.length) %
+        NEW_LIST_ACCENT_POOL.length;
+      const accent =
+        NEW_LIST_ACCENT_POOL[
+          accentIndex >= 0 ? accentIndex : 0
+        ];
+
+      setColumnOrder((prev) => [...prev, id]);
+      setColumnMeta((prev) => ({
+        ...prev,
+        [id]: { title, ...accent },
+      }));
+      setColumns((prev) => ({ ...prev, [id]: [] }));
+    },
+    [columnOrder.length],
   );
 
   const handleAddInboxTask = useCallback((task: InboxTask) => {
@@ -401,7 +544,7 @@ export function BoardWorkspace() {
       setColumns((prev) => ({
         ...prev,
         [selectedKanbanColumnId]: [
-          ...prev[selectedKanbanColumnId],
+          ...(prev[selectedKanbanColumnId] ?? []),
           kanbanTask,
         ],
       }));
@@ -433,10 +576,19 @@ export function BoardWorkspace() {
     [],
   );
 
+  const columnDropIndicators = useMemo(() => {
+    const out: Record<string, number | null> = {};
+    for (const col of columnOrder) {
+      out[col] = dropIndicators[col] ?? null;
+    }
+    return out;
+  }, [columnOrder, dropIndicators]);
+
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={columnAwareCollision}
+      modifiers={dndContextModifiers}
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragOver={handleDragOver}
@@ -458,20 +610,27 @@ export function BoardWorkspace() {
         <div className="min-w-0 flex-1">
           <KanbanBoardSection
             columns={columns}
+            columnOrder={columnOrder}
+            columnMeta={columnMeta}
             onAddCard={handleAddKanbanCard}
             selectedColumnId={selectedKanbanColumnId}
             onSelectColumn={handleSelectKanbanColumn}
-            columnDropIndicators={{
-              todo: dropIndicators.todo,
-              "in-progress": dropIndicators["in-progress"],
-              done: dropIndicators.done,
-            }}
+            onRenameColumn={handleRenameColumn}
+            onAddColumn={handleAddColumn}
+            columnDropIndicators={columnDropIndicators}
             dropSlotMinHeightPx={dragSlotMinHeightPx}
+            isColumnDragActive={isColumnDrag}
           />
         </div>
       </div>
-      <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
-        {activeInboxTask ? (
+      <DragOverlay dropAnimation={null} modifiers={overlayModifiers}>
+        {activeColumnForDrag && columnMeta[activeColumnForDrag] ? (
+          <ColumnDragPreview
+            title={columnMeta[activeColumnForDrag].title}
+            meta={columnMeta[activeColumnForDrag]}
+            taskCount={(columns[activeColumnForDrag] ?? []).length}
+          />
+        ) : activeInboxTask ? (
           <InboxCardPreview task={activeInboxTask} />
         ) : activeKanbanTask ? (
           <CardPreview task={activeKanbanTask} />

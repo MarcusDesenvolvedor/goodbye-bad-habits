@@ -1,5 +1,4 @@
 import type { ColumnTasks, KanbanColumnId } from "./board-kanban-mock";
-import { KANBAN_COLUMN_ORDER } from "./board-kanban-mock";
 
 /** Keep in sync with `WORKSPACE_INBOX_ZONE_ID` in `board-inbox.tsx`. */
 const INBOX_DROP_ZONE_ID = "workspace-inbox-zone";
@@ -7,6 +6,7 @@ const INBOX_DROP_ZONE_ID = "workspace-inbox-zone";
 function findContainer(
   inboxIds: string[],
   columns: ColumnTasks,
+  columnOrder: string[],
   id: string,
 ): "inbox" | KanbanColumnId | undefined {
   if (id === INBOX_DROP_ZONE_ID) {
@@ -15,11 +15,11 @@ function findContainer(
   if (inboxIds.includes(id)) {
     return "inbox";
   }
-  if (KANBAN_COLUMN_ORDER.includes(id as KanbanColumnId)) {
-    return id as KanbanColumnId;
+  if (columnOrder.includes(id)) {
+    return id;
   }
-  for (const col of KANBAN_COLUMN_ORDER) {
-    if (columns[col].some((t) => t.id === id)) {
+  for (const col of columnOrder) {
+    if (columns[col]?.some((t) => t.id === id)) {
       return col;
     }
   }
@@ -28,72 +28,63 @@ function findContainer(
 
 export type BoardDropIndicators = {
   inbox: number | null;
-} & Record<KanbanColumnId, number | null>;
+} & Record<string, number | null>;
 
-const emptyIndicators = (): BoardDropIndicators => ({
-  inbox: null,
-  todo: null,
-  "in-progress": null,
-  done: null,
-});
+const emptyIndicators = (columnOrder: string[]): BoardDropIndicators => {
+  const out: BoardDropIndicators = { inbox: null };
+  for (const col of columnOrder) {
+    out[col] = null;
+  }
+  return out;
+};
 
 /**
- * Insertion index for a horizontal “drop here” line before the card at that index
+ * Insertion index for a horizontal "drop here" line before the card at that index
  * (or before the trailing slot when index === list.length).
  */
 export function computeBoardDropIndicators(
   inboxIds: string[],
   columns: ColumnTasks,
+  columnOrder: string[],
   activeId: string | null,
   overId: string | null,
 ): BoardDropIndicators {
   if (!activeId || !overId) {
-    return emptyIndicators();
+    return emptyIndicators(columnOrder);
   }
 
-  const activeContainer = findContainer(inboxIds, columns, activeId);
-  const overContainer = findContainer(inboxIds, columns, overId);
+  const activeContainer = findContainer(inboxIds, columns, columnOrder, activeId);
+  const overContainer = findContainer(inboxIds, columns, columnOrder, overId);
   if (!activeContainer || !overContainer) {
-    return emptyIndicators();
+    return emptyIndicators(columnOrder);
   }
 
-  const out = emptyIndicators();
+  const out = emptyIndicators(columnOrder);
 
-  function setInbox(index: number | null) {
-    out.inbox = index;
-  }
-
-  function setColumn(col: KanbanColumnId, index: number | null) {
-    out[col] = index;
-  }
-
-  // Same-container reorder: useSortable handles visual displacement via CSS
-  // transforms, so we skip the drop slot entirely to avoid double gaps.
   if (activeContainer === overContainer) {
     return out;
   }
 
-  // Cross-container: show indicator only on the target column / inbox.
   if (overContainer === "inbox") {
     if (overId === INBOX_DROP_ZONE_ID) {
-      setInbox(inboxIds.length);
+      out.inbox = inboxIds.length;
     } else {
       const overIdx = inboxIds.indexOf(overId);
       if (overIdx >= 0) {
-        setInbox(overIdx);
+        out.inbox = overIdx;
       }
     }
     return out;
   }
 
   const col = overContainer;
-  const ids = columns[col].map((t) => t.id);
+  const ids = (columns[col] ?? []).map((t) => t.id);
   if (overId === col) {
-    setColumn(col, ids.length);
+    out[col] = ids.length;
   } else {
     const overIdx = ids.indexOf(overId);
     if (overIdx >= 0) {
-      setColumn(col, overIdx);
+      out[col] = overIdx;
     }
   }
   return out;
