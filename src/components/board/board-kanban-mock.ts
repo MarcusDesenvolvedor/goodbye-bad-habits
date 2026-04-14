@@ -20,6 +20,10 @@ export type ColumnMeta = {
   columnShellClass: string;
 };
 
+/** Stitch Etheric Kanban — tonal lanes (surface_container_low), no heavy borders */
+const EDITORIAL_COLUMN =
+  "rounded-xl bg-ds-surface-container-low shadow-[0_1px_3px_rgba(26,28,28,0.06)]";
+
 export const KANBAN_COLUMN_ORDER: string[] = [
   "todo",
   "in-progress",
@@ -29,53 +33,88 @@ export const KANBAN_COLUMN_ORDER: string[] = [
 export const KANBAN_COLUMN_META: Record<string, ColumnMeta> = {
   todo: {
     title: "To do",
-    accentBarClass:
-      "bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-400 opacity-90 shadow-[0_0_12px_rgba(59,130,246,0.5)]",
-    columnShellClass:
-      "rounded-2xl border border-blue-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(59,130,246,0.14)] backdrop-blur-md",
+    accentBarClass: "h-1 w-full shrink-0 opacity-0",
+    columnShellClass: EDITORIAL_COLUMN,
   },
   "in-progress": {
     title: "In progress",
-    accentBarClass:
-      "bg-gradient-to-r from-blue-600 via-blue-400 to-cyan-300 opacity-90 shadow-[0_0_12px_rgba(34,211,238,0.45)]",
-    columnShellClass:
-      "rounded-2xl border border-sky-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(34,211,238,0.12)] backdrop-blur-md",
+    accentBarClass: "h-1 w-full shrink-0 opacity-0",
+    columnShellClass: EDITORIAL_COLUMN,
   },
   done: {
     title: "Done",
-    accentBarClass:
-      "bg-gradient-to-r from-violet-500 via-purple-400 to-fuchsia-400 opacity-90 shadow-[0_0_12px_rgba(167,139,250,0.5)]",
-    columnShellClass:
-      "rounded-2xl border border-violet-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(167,139,250,0.16)] backdrop-blur-md",
+    accentBarClass: "h-1 w-full shrink-0 opacity-0",
+    columnShellClass: EDITORIAL_COLUMN,
   },
 };
 
 export const NEW_LIST_ACCENT_POOL: Omit<ColumnMeta, "title">[] = [
   {
-    accentBarClass:
-      "bg-gradient-to-r from-emerald-500 via-green-400 to-teal-400 opacity-90 shadow-[0_0_12px_rgba(16,185,129,0.5)]",
-    columnShellClass:
-      "rounded-2xl border border-emerald-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(16,185,129,0.14)] backdrop-blur-md",
+    accentBarClass: "h-1 w-full shrink-0 stitch-accent-bar opacity-90",
+    columnShellClass: EDITORIAL_COLUMN,
   },
   {
     accentBarClass:
-      "bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-400 opacity-90 shadow-[0_0_12px_rgba(245,158,11,0.5)]",
-    columnShellClass:
-      "rounded-2xl border border-amber-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(245,158,11,0.14)] backdrop-blur-md",
+      "h-1 w-full shrink-0 bg-gradient-to-r from-ds-primary-container to-ds-primary opacity-85",
+    columnShellClass: EDITORIAL_COLUMN,
   },
   {
-    accentBarClass:
-      "bg-gradient-to-r from-rose-500 via-pink-400 to-fuchsia-400 opacity-90 shadow-[0_0_12px_rgba(244,63,94,0.5)]",
-    columnShellClass:
-      "rounded-2xl border border-rose-400/35 bg-zinc-900/45 shadow-[0_0_36px_rgba(244,63,94,0.14)] backdrop-blur-md",
+    accentBarClass: "h-1 w-full shrink-0 bg-ds-primary-fixed",
+    columnShellClass: EDITORIAL_COLUMN,
   },
 ];
 
 export const TAG_PILL_CLASSES = [
-  "border border-blue-400/45 bg-blue-500/15 text-sky-200 shadow-[0_0_10px_rgba(59,130,246,0.2)]",
-  "border border-cyan-400/40 bg-cyan-500/10 text-cyan-100 shadow-[0_0_10px_rgba(34,211,238,0.15)]",
-  "border border-violet-400/45 bg-violet-500/15 text-violet-200 shadow-[0_0_10px_rgba(167,139,250,0.2)]",
+  "bg-ds-secondary-fixed text-ds-on-secondary-fixed-variant text-[0.65rem] font-bold uppercase tracking-wide",
+  "bg-ds-primary-fixed text-ds-on-primary-fixed-variant text-[0.65rem] font-bold uppercase tracking-wide",
+  "bg-ds-secondary-container text-ds-on-secondary-container text-[0.65rem] font-bold uppercase tracking-wide",
 ] as const;
+
+export type ListColorPreset = {
+  name: string;
+  dotClass: string;
+  accentBarClass: string;
+  columnShellClass: string;
+};
+
+export const LIST_COLOR_PRESETS: ListColorPreset[] = [
+  {
+    name: "Blue",
+    dotClass: "bg-ds-primary",
+    accentBarClass: KANBAN_COLUMN_META.todo.accentBarClass,
+    columnShellClass: KANBAN_COLUMN_META.todo.columnShellClass,
+  },
+  {
+    name: "Cyan",
+    dotClass: "bg-ds-primary-container",
+    accentBarClass: KANBAN_COLUMN_META["in-progress"].accentBarClass,
+    columnShellClass: KANBAN_COLUMN_META["in-progress"].columnShellClass,
+  },
+  {
+    name: "Violet",
+    dotClass: "bg-ds-on-primary-fixed-variant",
+    accentBarClass: KANBAN_COLUMN_META.done.accentBarClass,
+    columnShellClass: KANBAN_COLUMN_META.done.columnShellClass,
+  },
+  {
+    name: "Emerald",
+    dotClass: "bg-emerald-500",
+    accentBarClass: NEW_LIST_ACCENT_POOL[0].accentBarClass,
+    columnShellClass: NEW_LIST_ACCENT_POOL[0].columnShellClass,
+  },
+  {
+    name: "Amber",
+    dotClass: "bg-amber-500",
+    accentBarClass: NEW_LIST_ACCENT_POOL[1].accentBarClass,
+    columnShellClass: NEW_LIST_ACCENT_POOL[1].columnShellClass,
+  },
+  {
+    name: "Rose",
+    dotClass: "bg-rose-400",
+    accentBarClass: NEW_LIST_ACCENT_POOL[2].accentBarClass,
+    columnShellClass: NEW_LIST_ACCENT_POOL[2].columnShellClass,
+  },
+];
 
 export function createMockKanbanColumns(): ColumnTasks {
   return {

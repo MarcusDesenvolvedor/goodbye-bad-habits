@@ -84,7 +84,7 @@ export function BoardViewClient({ boardId }: Props) {
   if (loading) {
     return (
       <BauhausBoardShell title="Board" subtitle="Loading">
-        <p className="text-sm text-zinc-400">Loading board…</p>
+        <p className="text-sm text-ds-on-surface-variant">Loading board…</p>
       </BauhausBoardShell>
     );
   }
@@ -92,13 +92,13 @@ export function BoardViewClient({ boardId }: Props) {
   if (notFound || !board) {
     return (
       <BauhausBoardShell title="Board" subtitle="Not found">
-        <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-white/10 bg-zinc-900/50 p-6 shadow-[0_0_40px_rgba(0,0,0,0.4)] backdrop-blur-md">
-          <p className="text-sm uppercase tracking-wide text-zinc-400">
+        <div className="mx-auto max-w-lg space-y-4 rounded-2xl bg-ds-surface-container-lowest p-6 shadow-[0_8px_32px_rgba(26,28,28,0.1)] ring-1 ring-ds-on-surface/[0.06]">
+          <p className="text-sm uppercase tracking-wide text-ds-on-surface-variant">
             This board does not exist or you do not have access.
           </p>
           <Link
             href="/my-boards"
-            className="inline-block rounded-lg border border-blue-400/50 bg-blue-600/90 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[0_0_20px_rgba(59,130,246,0.35)]"
+            className="stitch-btn-primary inline-block px-4 py-2 text-sm font-bold uppercase tracking-wide"
           >
             Back to my boards
           </Link>
@@ -113,14 +113,14 @@ export function BoardViewClient({ boardId }: Props) {
       subtitle="Active · Kanban"
       actions={
         <>
-          <label className="flex flex-col gap-1 text-xs uppercase tracking-widest text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs uppercase tracking-widest text-ds-on-surface-variant">
             <span className="sr-only">Board title</span>
             <input
               type="text"
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
               onBlur={() => void saveTitle()}
-              className="min-w-[12rem] rounded-lg border border-white/15 bg-zinc-950/90 px-2 py-1.5 text-sm font-medium normal-case tracking-normal text-zinc-100 outline-none focus:border-blue-400/50 focus:ring-2 focus:ring-blue-500/30"
+              className="min-w-[12rem] rounded-xl border-0 bg-ds-surface-container-high px-3 py-2 text-sm font-medium normal-case tracking-normal text-ds-on-surface outline-none focus:bg-ds-surface-container-lowest focus:ring-2 focus:ring-ds-primary-container/25"
               maxLength={200}
               aria-label="Board title"
             />
@@ -129,13 +129,13 @@ export function BoardViewClient({ boardId }: Props) {
             type="button"
             disabled={saving || titleDraft.trim() === board.title}
             onClick={() => void saveTitle()}
-            className="rounded-lg border border-violet-400/45 bg-violet-600/85 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] disabled:opacity-50"
+            className="stitch-btn-primary px-3 py-1.5 text-xs font-bold uppercase tracking-widest disabled:opacity-50"
           >
             Save
           </button>
           <Link
             href="/my-boards"
-            className="rounded-lg border border-blue-400/45 bg-transparent px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-zinc-200 shadow-[0_0_14px_rgba(59,130,246,0.12)] transition hover:border-cyan-400/50 hover:text-white"
+            className="rounded-xl border border-ds-outline-variant/35 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ds-on-surface transition hover:border-ds-primary-container/40 hover:text-ds-primary"
           >
             My boards
           </Link>
@@ -143,7 +143,7 @@ export function BoardViewClient({ boardId }: Props) {
       }
     >
       {saveError ? (
-        <p className="mb-4 text-sm text-rose-400" role="alert">
+        <p className="mb-4 text-sm text-ds-error" role="alert">
           {saveError}
         </p>
       ) : null}

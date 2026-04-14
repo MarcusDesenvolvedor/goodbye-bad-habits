@@ -1,0 +1,34 @@
+{
+  "source": "Google Stitch MCP — project Telas KANBAN (15327930427196675458), design system assets/b88987626e0c48bcaff896db748b3a1a",
+  "exportedAt": "2026-04-14",
+  "colors": {
+    "primary": "#4f378a",
+    "primary_container": "#6750a4",
+    "on_primary": "#ffffff",
+    "secondary": "#635a76",
+    "secondary_container": "#eaddff",
+    "on_secondary_container": "#69607c",
+    "surface": "#f9f9f9",
+    "surface_container_low": "#f3f3f3",
+    "surface_container": "#eeeeee",
+    "surface_container_high": "#e8e8e8",
+    "surface_container_highest": "#e2e2e2",
+    "surface_container_lowest": "#ffffff",
+    "surface_variant": "#e2e2e2",
+    "on_surface": "#1a1c1c",
+    "on_surface_variant": "#494551",
+    "outline_variant": "#cbc4d2",
+    "primary_fixed": "#e9ddff",
+    "on_primary_fixed_variant": "#4f378a",
+    "secondary_fixed": "#eaddff",
+    "on_secondary_fixed_variant": "#4b425d",
+    "surface_tint": "#6750a4",
+    "error": "#ba1a1a"
+  },
+  "radiiPx": { "card": 12, "modal": 28, "chip": 9999 },
+  "typography": { "body": "Inter", "headline": "Inter", "label": "Inter" },
+  "effects": {
+    "primary_button_gradient": "linear-gradient(145deg, #4f378a 0%, #6750a4 100%)",
+    "ambient_card_shadow": "0px 8px 24px rgba(103, 80, 164, 0.08)"
+  }
+}

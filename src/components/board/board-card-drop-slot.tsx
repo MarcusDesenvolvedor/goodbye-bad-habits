@@ -2,11 +2,11 @@
 
 /**
  * Reserved drop slot: mirrors inbox/kanban card surface tokens
- * (radius, padding, bg, shadow, blur), with dashed outline + `opacity-50` for the
+ * (radius, padding, bg), with dashed outline + `opacity-50` for the
  * “empty seat” affordance. Keep in sync when card shells change.
  */
 const BOARD_CARD_DROP_SLOT_CLASS =
-  "animate-card-drop-slot pointer-events-none box-border w-full shrink-0 touch-none rounded-xl border border-dashed border-cyan-400/50 bg-zinc-900/80 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm";
+  "animate-card-drop-slot pointer-events-none box-border w-full shrink-0 touch-none rounded-xl border border-dashed border-ds-primary-container/45 bg-ds-surface-container-lowest/90 p-3 shadow-[0_1px_3px_rgba(26,28,28,0.06)]";
 
 const DEFAULT_MIN_HEIGHT_PX = 88;
 

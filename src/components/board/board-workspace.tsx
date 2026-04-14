@@ -31,7 +31,6 @@ import {
   type KanbanTask,
   KANBAN_COLUMN_META,
   KANBAN_COLUMN_ORDER,
-  NEW_LIST_ACCENT_POOL,
   createMockKanbanColumns,
 } from "./board-kanban-mock";
 import {
@@ -497,16 +496,8 @@ export function BoardWorkspace() {
   );
 
   const handleAddColumn = useCallback(
-    (title: string) => {
+    (title: string, accent: { accentBarClass: string; columnShellClass: string }) => {
       const id = `list-${crypto.randomUUID()}`;
-      const accentIndex =
-        (columnOrder.length - KANBAN_COLUMN_ORDER.length) %
-        NEW_LIST_ACCENT_POOL.length;
-      const accent =
-        NEW_LIST_ACCENT_POOL[
-          accentIndex >= 0 ? accentIndex : 0
-        ];
-
       setColumnOrder((prev) => [...prev, id]);
       setColumnMeta((prev) => ({
         ...prev,
@@ -514,7 +505,51 @@ export function BoardWorkspace() {
       }));
       setColumns((prev) => ({ ...prev, [id]: [] }));
     },
-    [columnOrder.length],
+    [],
+  );
+
+  const handleRenameKanbanCard = useCallback(
+    (columnId: KanbanColumnId, taskId: string, title: string) => {
+      setColumns((prev) => {
+        const list = prev[columnId];
+        if (!list) return prev;
+        return { ...prev, [columnId]: list.map((t) => (t.id === taskId ? { ...t, title } : t)) };
+      });
+    },
+    [],
+  );
+
+  const handleUpdateKanbanCard = useCallback(
+    (columnId: KanbanColumnId, task: KanbanTask) => {
+      setColumns((prev) => {
+        const list = prev[columnId];
+        if (!list) return prev;
+        return { ...prev, [columnId]: list.map((t) => (t.id === task.id ? task : t)) };
+      });
+    },
+    [],
+  );
+
+  const handleDeleteKanbanCard = useCallback(
+    (columnId: KanbanColumnId, taskId: string) => {
+      setColumns((prev) => {
+        const list = prev[columnId];
+        if (!list) return prev;
+        return { ...prev, [columnId]: list.filter((t) => t.id !== taskId) };
+      });
+    },
+    [],
+  );
+
+  const handleDuplicateKanbanCard = useCallback(
+    (columnId: KanbanColumnId, task: KanbanTask) => {
+      const copy: KanbanTask = { ...task, id: `mock-${crypto.randomUUID()}` };
+      setColumns((prev) => ({
+        ...prev,
+        [columnId]: [...(prev[columnId] ?? []), copy],
+      }));
+    },
+    [],
   );
 
   const handleAddInboxTask = useCallback((task: InboxTask) => {
@@ -617,6 +652,12 @@ export function BoardWorkspace() {
             onSelectColumn={handleSelectKanbanColumn}
             onRenameColumn={handleRenameColumn}
             onAddColumn={handleAddColumn}
+            onRenameCard={handleRenameKanbanCard}
+            onUpdateCard={handleUpdateKanbanCard}
+            onDeleteCard={handleDeleteKanbanCard}
+            onDuplicateCard={handleDuplicateKanbanCard}
+            workspaceCustomLabels={workspaceCustomLabels}
+            onAddWorkspaceCustomLabel={handleAddWorkspaceCustomLabel}
             columnDropIndicators={columnDropIndicators}
             dropSlotMinHeightPx={dragSlotMinHeightPx}
             isColumnDragActive={isColumnDrag}

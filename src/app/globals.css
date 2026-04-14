@@ -1,43 +1,151 @@
 @import "tailwindcss";
 
-/* Google Stitch reference: Kanban Board — Bauhaus Style (dark glass + neon) */
+/*
+ * Etheric Kanban — design tokens from Google Stitch
+ * Project: Telas KANBAN (15327930427196675458)
+ * Design system asset: assets/b88987626e0c48bcaff896db748b3a1a
+ * HTML reference: docs/design/stitch-telas-kanban/*.html
+ */
 :root {
-  --stitch-bg: #06060a;
-  --stitch-bg-soft: #0c0c12;
-  --stitch-surface: rgba(255, 255, 255, 0.06);
-  --stitch-surface-card: rgba(24, 24, 32, 0.72);
-  --stitch-border: rgba(255, 255, 255, 0.1);
-  --stitch-text: #fafafa;
-  --stitch-muted: #a1a1aa;
-  --stitch-blue: #3b82f6;
-  --stitch-cyan: #22d3ee;
-  --stitch-purple: #a78bfa;
-  --stitch-header: #030305;
-  --background: var(--stitch-bg);
-  --foreground: var(--stitch-text);
+  /* DTCG / M3 named colors (exact hex from Stitch export) */
+  --ds-primary: #4f378a;
+  --ds-primary-container: #6750a4;
+  --ds-on-primary: #ffffff;
+  --ds-secondary: #635a76;
+  --ds-secondary-container: #eaddff;
+  --ds-on-secondary-container: #69607c;
+  --ds-surface: #f9f9f9;
+  --ds-surface-container-low: #f3f3f3;
+  --ds-surface-container: #eeeeee;
+  --ds-surface-container-high: #e8e8e8;
+  --ds-surface-container-highest: #e2e2e2;
+  --ds-surface-container-lowest: #ffffff;
+  --ds-surface-variant: #e2e2e2;
+  --ds-on-surface: #1a1c1c;
+  --ds-on-surface-variant: #494551;
+  --ds-outline-variant: #cbc4d2;
+  --ds-primary-fixed: #e9ddff;
+  --ds-on-primary-fixed-variant: #4f378a;
+  --ds-secondary-fixed: #eaddff;
+  --ds-on-secondary-fixed-variant: #4b425d;
+  --ds-surface-tint: #6750a4;
+  --ds-error: #ba1a1a;
+
+  /* Legacy app aliases (board + marketing) → light editorial theme */
+  --stitch-bg: #f3f3f3;
+  --stitch-bg-soft: #eeeeee;
+  --stitch-surface: rgba(255, 255, 255, 0.88);
+  --stitch-surface-card: #ffffff;
+  --stitch-border: rgba(203, 196, 210, 0.35);
+  --stitch-text: #1a1c1c;
+  --stitch-muted: #494551;
+  --stitch-blue: #4f378a;
+  --stitch-cyan: #6750a4;
+  --stitch-purple: #6750a4;
+  --stitch-header: rgba(248, 250, 252, 0.82);
+  --stitch-m3-primary: #6750a4;
+  --stitch-m3-surface-container: #eeeeee;
+  --stitch-drag-slot: #6750a4;
+  --stitch-focus-ring: rgba(103, 80, 164, 0.35);
+  --background: var(--ds-surface);
+  --foreground: var(--ds-on-surface);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-bauhaus-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  --color-ds-primary: #4f378a;
+  --color-ds-primary-container: #6750a4;
+  --color-ds-on-primary: #ffffff;
+  --color-ds-secondary-container: #eaddff;
+  --color-ds-on-secondary-container: #69607c;
+  --color-ds-surface: #f9f9f9;
+  --color-ds-surface-container-low: #f3f3f3;
+  --color-ds-surface-container: #eeeeee;
+  --color-ds-surface-container-high: #e8e8e8;
+  --color-ds-surface-container-lowest: #ffffff;
+  --color-ds-on-surface: #1a1c1c;
+  --color-ds-on-surface-variant: #494551;
+  --color-ds-outline-variant: #cbc4d2;
+  --color-ds-primary-fixed: #e9ddff;
+  --color-ds-on-primary-fixed-variant: #4f378a;
+  --color-ds-error: #ba1a1a;
 }
 
 body {
-  background: var(--stitch-bg);
-  color: var(--stitch-text);
-  font-family: var(--font-bauhaus-sans), ui-sans-serif, system-ui, sans-serif;
+  background: var(--ds-surface);
+  color: var(--ds-on-surface);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Drop placeholder (where the card will land) — gentle pulse */
+/* Kanban / modals — exported Stitch utilities */
+.stitch-kanban-card-surface {
+  border-radius: 0.75rem;
+  background: var(--ds-surface-container-lowest);
+  box-shadow: 0 1px 2px rgba(26, 28, 28, 0.06);
+}
+
+.stitch-glass-panel {
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--ds-surface-container-lowest) 86%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(103, 80, 164, 0.08);
+}
+
+.stitch-glass-panel-dense {
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--ds-surface-container-lowest) 94%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(26, 28, 28, 0.08);
+  border: 1px solid color-mix(in srgb, var(--ds-outline-variant) 18%, transparent);
+}
+
+.stitch-modal-overlay {
+  background: color-mix(in srgb, var(--ds-on-surface) 22%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.stitch-btn-primary {
+  border-radius: 0.75rem;
+  background: linear-gradient(145deg, #4f378a 0%, #6750a4 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(103, 80, 164, 0.2);
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.stitch-btn-primary:hover {
+  transform: scale(1.05);
+}
+
+.stitch-btn-secondary {
+  border-radius: 0.75rem;
+  background: var(--ds-secondary-container);
+  color: var(--ds-on-secondary-container);
+  transition: transform 0.15s ease-out, background 0.15s ease-out;
+}
+
+.stitch-btn-secondary:hover {
+  transform: scale(1.02);
+}
+
+.stitch-accent-bar {
+  border-radius: 9999px;
+  background: linear-gradient(145deg, #4f378a 0%, #6750a4 100%);
+}
+
 @keyframes card-drop-slot-pulse {
   0%,
   100% {
-    opacity: 0.4;
+    opacity: 0.45;
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.7;
   }
 }
 

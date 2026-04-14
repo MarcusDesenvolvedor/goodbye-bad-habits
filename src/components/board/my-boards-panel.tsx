@@ -96,17 +96,14 @@ export function MyBoardsPanel() {
   }
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[var(--stitch-surface)] p-6 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
-      <div className="mb-6 flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className="rounded-2xl border border-ds-outline-variant/25 bg-ds-surface-container-lowest p-6 shadow-[0_8px_32px_rgba(26,28,28,0.08)] backdrop-blur-md">
+      <div className="mb-6 flex flex-col gap-4 border-b border-ds-outline-variant/20 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div
-            className="mb-3 h-1 w-44 rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-violet-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]"
-            aria-hidden
-          />
-          <h2 className="text-lg font-bold uppercase tracking-widest text-zinc-100">
+          <div className="stitch-accent-bar mb-3 h-1 w-44 rounded-full" aria-hidden />
+          <h2 className="text-lg font-bold uppercase tracking-widest text-ds-on-surface">
             Your workspaces
           </h2>
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
+          <p className="text-xs uppercase tracking-wide text-ds-on-surface-variant">
             Boards you created · open one to use the Kanban
           </p>
         </div>
@@ -120,33 +117,33 @@ export function MyBoardsPanel() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="New board title"
-            className="min-w-0 flex-1 rounded-lg border border-white/15 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/40"
+            className="min-w-0 flex-1 rounded-xl border-0 bg-ds-surface-container-high px-3 py-2 text-sm text-ds-on-surface outline-none ring-0 placeholder:text-ds-on-surface-variant focus:bg-ds-surface-container-lowest focus:ring-2 focus:ring-ds-primary-container/25"
             maxLength={200}
             aria-label="New board title"
           />
           <button
             type="submit"
             disabled={creating || !title.trim()}
-            className="rounded-lg border border-blue-400/45 bg-blue-600/90 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] transition enabled:hover:bg-blue-500 disabled:opacity-50"
+            className="stitch-btn-primary px-4 py-2 text-sm font-bold uppercase tracking-wide disabled:opacity-50"
           >
             Create
           </button>
         </form>
       </div>
       {createError ? (
-        <p className="mb-4 text-sm text-rose-400" role="alert">
+        <p className="mb-4 text-sm text-ds-error" role="alert">
           {createError}
         </p>
       ) : null}
       {loadError ? (
-        <p className="mb-4 text-sm text-rose-400" role="alert">
+        <p className="mb-4 text-sm text-ds-error" role="alert">
           {loadError}
         </p>
       ) : null}
       {boards === null ? (
-        <p className="text-sm text-zinc-500">Loading boards…</p>
+        <p className="text-sm text-ds-on-surface-variant">Loading boards…</p>
       ) : boards.length === 0 ? (
-        <p className="text-sm uppercase tracking-wide text-zinc-500">
+        <p className="text-sm uppercase tracking-wide text-ds-on-surface-variant">
           No boards yet — create one above.
         </p>
       ) : (
@@ -154,30 +151,30 @@ export function MyBoardsPanel() {
           {boards.map((board) => (
             <li
               key={board.id}
-              className="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-zinc-900/55 shadow-[0_0_28px_rgba(0,0,0,0.35)] backdrop-blur-md"
+              className="flex flex-col overflow-hidden rounded-xl bg-ds-surface-container-lowest shadow-[0_1px_3px_rgba(26,28,28,0.08)] ring-1 ring-ds-on-surface/[0.06] backdrop-blur-md"
             >
               <Link
                 href={`/board/${board.id}`}
-                className="flex-1 px-4 py-4 transition hover:bg-white/5"
+                className="flex-1 px-4 py-4 transition hover:bg-ds-surface-container-low"
               >
-                <span className="block text-base font-bold tracking-wide text-zinc-100">
+                <span className="block text-base font-bold tracking-wide text-ds-on-surface">
                   {board.title}
                 </span>
-                <span className="mt-1 block text-xs text-zinc-500">
+                <span className="mt-1 block text-xs text-ds-on-surface-variant">
                   Updated {new Date(board.updatedAt).toLocaleString()}
                 </span>
               </Link>
-              <div className="flex border-t border-white/10">
+              <div className="flex border-t border-ds-outline-variant/20">
                 <button
                   type="button"
                   onClick={() => void handleDelete(board.id)}
-                  className="flex-1 border-r border-white/10 bg-black/40 py-2 text-xs font-bold uppercase tracking-widest text-zinc-300 transition hover:bg-rose-950/50 hover:text-rose-200"
+                  className="flex-1 border-r border-ds-outline-variant/20 bg-ds-surface-container-low py-2 text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant transition hover:bg-red-50 hover:text-ds-error"
                 >
                   Delete
                 </button>
                 <Link
                   href={`/board/${board.id}`}
-                  className="flex-1 bg-blue-600/35 py-2 text-center text-xs font-bold uppercase tracking-widest text-blue-100 shadow-[inset_0_0_20px_rgba(59,130,246,0.15)] transition hover:bg-blue-600/50"
+                  className="stitch-btn-primary flex-1 py-2 text-center text-xs font-bold uppercase tracking-widest"
                 >
                   Open
                 </Link>

@@ -45,31 +45,30 @@ export type InboxTask = {
 /** Droppable id for the inbox list (shared with board-workspace drag logic). */
 export const WORKSPACE_INBOX_ZONE_ID = "workspace-inbox-zone";
 
-const inboxCardSurfaceClass =
-  "touch-none rounded-xl border border-white/10 bg-zinc-900/80 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm";
+const inboxCardSurfaceClass = "stitch-kanban-card-surface touch-none p-3";
 
-const inboxCardInteractiveClass = `${inboxCardSurfaceClass} transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(0,0,0,0.5)]`;
+const inboxCardInteractiveClass = `${inboxCardSurfaceClass} transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(103,80,164,0.12)]`;
 
 const inboxInputClass =
-  "w-full rounded-lg border border-white/15 bg-zinc-950/80 px-2 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50";
+  "w-full rounded-xl border-0 bg-ds-surface-container-high px-2 py-1.5 text-xs text-ds-on-surface outline-none ring-0 placeholder:text-ds-on-surface-variant focus:bg-ds-surface-container-lowest focus:ring-2 focus:ring-ds-primary-container/25";
 
 const modalOverlayClass =
-  "fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-4 backdrop-blur-[2px] transition-opacity duration-200 ease-out";
+  "stitch-modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-200 ease-out";
 
 const modalPanelClass =
-  "max-h-[min(85vh,640px)] w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/95 p-5 shadow-[0_0_48px_rgba(0,0,0,0.55)] backdrop-blur-md transition-[opacity,transform] duration-200 ease-out";
+  "max-h-[min(85vh,720px)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-ds-surface-container-lowest p-6 shadow-[0_24px_64px_rgba(26,28,28,0.12)] ring-1 ring-ds-on-surface/[0.06] transition-[opacity,transform] duration-200 ease-out";
 
 const modalBtnPrimary =
-  "rounded-lg border border-blue-400/50 bg-blue-600/80 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-[0_0_18px_rgba(59,130,246,0.35)] transition hover:bg-blue-500";
+  "stitch-btn-primary px-4 py-2 text-xs font-bold uppercase tracking-widest";
 
 const modalBtnSecondary =
-  "rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-xs font-bold uppercase tracking-widest text-zinc-200 transition hover:bg-zinc-800";
+  "stitch-btn-secondary px-4 py-2 text-xs font-bold uppercase tracking-widest";
 
 /** Below modals (z-100), above board columns and overflow containers */
 const INBOX_CARD_MENU_Z = 95;
 
 const inboxCardMenuPanelClass =
-  "min-w-[10.5rem] origin-top-right rounded-xl border border-white/10 bg-zinc-950/95 py-1 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-md transition-[opacity,transform] duration-150 ease-out";
+  "stitch-glass-panel-dense min-w-[10.5rem] origin-top-right py-1 transition-[opacity,transform] duration-150 ease-out";
 
 function useHydrated() {
   return useSyncExternalStore(
@@ -288,7 +287,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
       style={style}
       className={
         isDragging
-          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-cyan-400/50 bg-zinc-900/40 p-3 shadow-[0_0_20px_rgba(0,0,0,0.35)] backdrop-blur-sm"
+          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-ds-primary-container/45 bg-ds-surface-container-lowest/90 p-3 shadow-[0_1px_3px_rgba(26,28,28,0.08)]"
           : `group/card relative z-0 cursor-grab text-left hover:z-10 active:cursor-grabbing ${inboxCardInteractiveClass}`
       }
       {...attributes}
@@ -300,7 +299,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
             <CardLabelBadge label={task.label} />
           </div>
         ) : null}
-        <h3 className="text-sm font-bold tracking-wide text-zinc-100">
+        <h3 className="text-sm font-bold tracking-wide text-ds-on-surface">
           {task.title}
         </h3>
         {task.label?.kind === "custom" ? (
@@ -323,7 +322,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             aria-label="Card actions"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-zinc-950/90 text-zinc-400 transition hover:border-white/20 hover:text-zinc-100"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-ds-outline-variant/25 bg-ds-surface-container-high text-ds-on-surface-variant transition hover:border-ds-outline-variant/40 hover:text-ds-on-surface"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -355,7 +354,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-xs font-semibold text-zinc-200 transition hover:bg-white/5"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold text-ds-on-surface transition hover:bg-white/5"
                 onClick={() => {
                   closeMenu();
                   setOpenCardVisible(true);
@@ -366,7 +365,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-xs font-semibold text-zinc-200 transition hover:bg-white/5"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold text-ds-on-surface transition hover:bg-white/5"
                 onClick={() => {
                   closeMenu();
                   setLabelCreateOpen(false);
@@ -380,7 +379,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-xs font-semibold text-zinc-200 transition hover:bg-white/5"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold text-ds-on-surface transition hover:bg-white/5"
                 onClick={() => {
                   onDuplicateTask(task);
                   closeMenu();
@@ -420,22 +419,22 @@ export const InboxSortableCard = memo(function InboxSortableCard({
               >
                 <h2
                   id={`inbox-open-${task.id}-title`}
-                  className="text-base font-bold tracking-wide text-zinc-100"
+                  className="text-base font-bold tracking-wide text-ds-on-surface"
                 >
                   {task.title}
                 </h2>
-                <div className="mt-3 border-t border-white/10 pt-3">
-                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+                <div className="mt-3 border-t border-ds-outline-variant/25 pt-3">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">
                     Description
                   </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+                  <p className="mt-1.5 text-sm leading-relaxed text-ds-on-surface-variant">
                     {task.description.trim()
                       ? task.description
                       : "No description."}
                   </p>
                 </div>
-                <div className="mt-4 border-t border-white/10 pt-3">
-                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+                <div className="mt-4 border-t border-ds-outline-variant/25 pt-3">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">
                     Comments
                   </p>
                   {task.comments && task.comments.length > 0 ? (
@@ -443,14 +442,14 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                       {task.comments.map((c, i) => (
                         <li
                           key={`${task.id}-c-${i}`}
-                          className="rounded-lg border border-white/10 bg-zinc-950/60 px-2.5 py-2 text-xs text-zinc-300"
+                          className="rounded-lg border border-ds-outline-variant/25 bg-ds-surface-container-high px-2.5 py-2 text-xs text-ds-on-surface-variant"
                         >
                           {c}
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-2 text-xs text-zinc-500">
+                    <p className="mt-2 text-xs text-ds-on-surface-variant">
                       No comments yet.
                     </p>
                   )}
@@ -479,7 +478,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                     </button>
                   </div>
                 </div>
-                <div className="mt-5 flex justify-end border-t border-white/10 pt-4">
+                <div className="mt-5 flex justify-end border-t border-ds-outline-variant/25 pt-4">
                   <button
                     type="button"
                     className={modalBtnSecondary}
@@ -510,31 +509,31 @@ export const InboxSortableCard = memo(function InboxSortableCard({
               >
                 <h2
                   id={`inbox-labels-${task.id}-title`}
-                  className="text-base font-bold tracking-wide text-zinc-100"
+                  className="text-base font-bold tracking-wide text-ds-on-surface"
                 >
                   Edit Labels
                 </h2>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-ds-on-surface-variant">
                   Default colors show as a slim bar above the title — tap the
                   same color again to remove. Custom labels include a title and
                   stay in this board&apos;s list.
                 </p>
                 {task.label ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+                    <span className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">
                       On card
                     </span>
                     <CardLabelBadge label={task.label} />
                     <button
                       type="button"
-                      className="rounded-lg border border-zinc-600 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-zinc-400 transition hover:border-red-400/40 hover:text-red-300"
+                      className="rounded-lg border border-ds-outline-variant/40 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-ds-on-surface-variant transition hover:border-ds-error/35 hover:text-ds-error"
                       onClick={clearLabel}
                     >
                       Remove
                     </button>
                   </div>
                 ) : null}
-                <p className="mt-4 text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+                <p className="mt-4 text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">
                   Default labels
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -551,7 +550,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                         aria-pressed={selected}
                         className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition ${
                           selected
-                            ? "border-white/80 ring-2 ring-cyan-400/50"
+                            ? "border-white/80 ring-2 ring-ds-primary-container/35"
                             : "border-transparent hover:border-white/25"
                         }`}
                         onClick={() => applyPreset(c)}
@@ -565,7 +564,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                 </div>
                 {workspaceCustomLabels.length > 0 ? (
                   <>
-                    <p className="mt-4 text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+                    <p className="mt-4 text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">
                       Your labels
                     </p>
                     <ul className="mt-2 flex max-h-32 flex-col gap-1.5 overflow-y-auto pr-1">
@@ -580,8 +579,8 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                               aria-pressed={selected}
                               className={`flex w-full items-center gap-2 rounded-lg border px-2 py-2 text-left text-xs font-semibold transition ${
                                 selected
-                                  ? "border-cyan-400/50 bg-cyan-500/10 text-zinc-100"
-                                  : "border-white/10 text-zinc-300 hover:border-white/20 hover:bg-white/[0.04]"
+                                  ? "border-ds-primary-container/40 bg-ds-primary-fixed/50 text-ds-on-surface"
+                                  : "border-ds-outline-variant/25 text-ds-on-surface-variant hover:border-white/20 hover:bg-white/[0.04]"
                               }`}
                               onClick={() => applyWorkspaceLabel(entry)}
                             >
@@ -599,14 +598,14 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                 {!labelCreateOpen ? (
                   <button
                     type="button"
-                    className={`${modalBtnSecondary} mt-4 w-full border-dashed border-blue-400/35 text-[0.65rem]`}
+                    className={`${modalBtnSecondary} mt-4 w-full border-dashed border-ds-primary-container/30 text-[0.65rem]`}
                     onClick={() => setLabelCreateOpen(true)}
                   >
                     Create Label
                   </button>
                 ) : (
-                  <div className="mt-4 rounded-xl border border-white/10 bg-zinc-950/50 p-3">
-                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-zinc-500">
+                  <div className="mt-4 rounded-xl border border-ds-outline-variant/25 bg-ds-surface-container-low p-3">
+                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">
                       New custom label
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -619,7 +618,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                             title={LABEL_COLOR_META[c].title}
                             className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition ${
                               selected
-                                ? "border-white/80 ring-2 ring-cyan-400/50"
+                                ? "border-white/80 ring-2 ring-ds-primary-container/35"
                                 : "border-transparent hover:border-white/25"
                             }`}
                             onClick={() => setCreateLabelColor(c)}
@@ -661,7 +660,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
                     </div>
                   </div>
                 )}
-                <div className="mt-5 flex justify-end border-t border-white/10 pt-4">
+                <div className="mt-5 flex justify-end border-t border-ds-outline-variant/25 pt-4">
                   <button
                     type="button"
                     className={modalBtnSecondary}
@@ -693,7 +692,7 @@ export function InboxCardPreview({ task }: { task: InboxTask }) {
             <CardLabelBadge label={task.label} />
           </div>
         ) : null}
-        <h3 className="text-sm font-bold tracking-wide text-zinc-100">
+        <h3 className="text-sm font-bold tracking-wide text-ds-on-surface">
           {task.title}
         </h3>
         {task.label?.kind === "custom" ? (
@@ -760,9 +759,9 @@ export function BoardInboxSection({
       className="w-full shrink-0 lg:w-[min(100%,300px)]"
       aria-label="Inbox"
     >
-      <section className="rounded-2xl border border-white/10 bg-[var(--stitch-surface)] p-4 shadow-[0_0_40px_rgba(0,0,0,0.45)] backdrop-blur-md lg:p-5">
-        <div className="relative z-0 mb-3 border-b border-white/10 pb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+      <section className="stitch-glass-panel rounded-2xl p-4 lg:p-5">
+        <div className="relative z-0 mb-3 border-b border-ds-outline-variant/25 pb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-ds-on-surface-variant">
             Inbox
           </h2>
         </div>
@@ -771,7 +770,7 @@ export function BoardInboxSection({
           ref={setInboxDropRef}
           className={`rounded-xl transition-[box-shadow,ring] duration-200 ease-out ${
             isInboxDropOver
-              ? "ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-[var(--stitch-bg)]"
+              ? "ring-2 ring-ds-primary-container/35 ring-offset-2 ring-offset-ds-surface-container-low"
               : ""
           }`}
         >
@@ -785,7 +784,7 @@ export function BoardInboxSection({
                   {dropIndicatorIndex === 0 ? (
                     <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
                   ) : null}
-                  <p className="py-6 text-center text-[0.65rem] text-zinc-500">
+                  <p className="py-6 text-center text-[0.65rem] text-ds-on-surface-variant">
                     No tasks yet — drop cards here or add below.
                   </p>
                 </>
@@ -816,18 +815,21 @@ export function BoardInboxSection({
                   <button
                     type="button"
                     onClick={() => setShowForm(true)}
-                    className={`w-full cursor-pointer text-left ${inboxCardSurfaceClass} text-sm font-bold tracking-wide text-zinc-500 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:text-zinc-300 hover:shadow-[0_12px_36px_rgba(0,0,0,0.5)]`}
+                    className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ds-outline-variant/35 py-6 text-[10px] font-bold uppercase tracking-widest text-ds-on-surface-variant transition-all hover:border-ds-primary-container/35 hover:text-ds-primary"
                   >
                     + Add card
                   </button>
                 ) : (
-                  <form onSubmit={handleSubmit} className={inboxCardSurfaceClass}>
+                  <form
+                    onSubmit={handleSubmit}
+                    className="rounded-xl border-0 bg-ds-surface-container-high p-4 shadow-sm ring-1 ring-ds-on-surface/[0.04]"
+                  >
                     <input
                       autoFocus
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Card title…"
-                      className="w-full bg-transparent text-sm font-bold tracking-wide text-zinc-100 outline-none placeholder:text-zinc-500"
+                      className="w-full rounded-xl border-0 bg-ds-surface-container-lowest px-3 py-2 text-sm font-semibold tracking-tight text-ds-on-surface outline-none ring-0 placeholder:text-ds-on-surface-variant focus:ring-2 focus:ring-ds-primary-container/25"
                       maxLength={120}
                       aria-label="Card title"
                       onKeyDown={(e) => {

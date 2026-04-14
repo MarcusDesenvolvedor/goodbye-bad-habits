@@ -1,10 +1,13 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
-
-import { bauhausSans } from "@/lib/bauhaus-font";
+import { Geist_Mono, Inter } from "next/font/google";
 
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -24,10 +27,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bauhausSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body
-        className={`${bauhausSans.className} flex min-h-full flex-col bg-[var(--stitch-bg)] text-[var(--stitch-text)]`}
+        className={`${inter.className} flex min-h-full flex-col bg-ds-surface-container-low text-ds-on-surface`}
       >
         <ClerkProvider>{children}</ClerkProvider>
       </body>

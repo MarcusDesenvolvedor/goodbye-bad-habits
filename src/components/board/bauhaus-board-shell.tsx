@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function BauhausBoardShell({
   title,
   subtitle,
@@ -11,29 +13,31 @@ export function BauhausBoardShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[var(--stitch-header)] px-6 py-4 text-white shadow-[0_0_32px_rgba(59,130,246,0.08)]">
+      <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-ds-outline-variant/20 bg-[color-mix(in_srgb,var(--ds-surface-container-lowest)_82%,transparent)] px-6 py-4 shadow-sm backdrop-blur-xl">
         <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-blue-400/90">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-ds-primary">
             Kanban
           </p>
-          <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-50">
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-ds-on-surface">
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-1 text-xs uppercase tracking-widest text-zinc-500">
+            <p className="mt-1 text-xs font-medium uppercase tracking-widest text-ds-on-surface-variant">
               {subtitle}
             </p>
           ) : null}
         </div>
-        {actions ? (
-          <div className="flex flex-wrap items-center gap-3">{actions}</div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant transition hover:bg-ds-surface-container-high hover:text-ds-primary"
+          >
+            Dashboard
+          </Link>
+          {actions}
+        </div>
       </header>
-      <div
-        className="h-0.5 w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-violet-500 shadow-[0_0_16px_rgba(59,130,246,0.4)]"
-        aria-hidden
-      />
-      <div className="flex-1 bg-[var(--stitch-bg)] p-6">{children}</div>
+      <div className="flex-1 bg-ds-surface-container-low p-6">{children}</div>
     </div>
   );
 }

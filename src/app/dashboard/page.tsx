@@ -3,10 +3,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { MyBoardsPanel } from "@/components/board/my-boards-panel";
+import { ProjectDashboardView } from "@/components/board/project-dashboard-view";
 import * as userService from "@/features/authentication/user.service";
 
-export default async function MyBoardsPage() {
+export default async function DashboardPage() {
   const clerkUser = await currentUser();
   if (!clerkUser) {
     redirect("/sign-in");
@@ -23,24 +23,24 @@ export default async function MyBoardsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      <div className="mb-10 overflow-hidden rounded-2xl border border-ds-outline-variant/25 bg-ds-surface-container-lowest shadow-[0_8px_32px_rgba(26,28,28,0.08)]">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-ds-outline-variant/20 bg-[color-mix(in_srgb,var(--ds-surface-container-lowest)_88%,transparent)] p-5 backdrop-blur-xl">
+    <div className="min-h-screen bg-ds-surface">
+      <header className="sticky top-0 z-40 border-b border-ds-outline-variant/20 bg-[color-mix(in_srgb,var(--ds-surface-container-lowest)_82%,transparent)] px-6 py-4 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-ds-primary">
               Workspace
             </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-ds-on-surface">
-              My boards
+            <h1 className="mt-1 text-xl font-bold tracking-tight text-ds-on-surface">
+              Project dashboard
             </h1>
-            <p className="mt-2 text-sm text-ds-on-surface-variant">{user.email}</p>
+            <p className="mt-1 text-xs text-ds-on-surface-variant">{user.email}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/dashboard"
+              href="/my-boards"
               className="rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant transition hover:bg-ds-surface-container-high hover:text-ds-primary"
             >
-              Dashboard
+              My boards
             </Link>
             <UserButton
               appearance={{
@@ -49,24 +49,12 @@ export default async function MyBoardsPage() {
                 },
               }}
             />
-            <Link
-              href="/"
-              className="rounded-xl border border-ds-outline-variant/30 px-3 py-2 text-xs font-bold uppercase tracking-widest text-ds-on-surface transition hover:border-ds-primary-container/35 hover:text-ds-primary"
-            >
-              Home
-            </Link>
           </div>
-        </header>
+        </div>
+      </header>
+      <div className="mx-auto max-w-7xl px-6 py-10">
+        <ProjectDashboardView displayName={user.email?.split("@")[0] ?? "there"} />
       </div>
-
-      <MyBoardsPanel />
-
-      <p className="mt-8 text-xs uppercase tracking-widest text-ds-on-surface-variant">
-        App user id ·{" "}
-        <span className="font-mono text-[0.65rem] text-ds-on-surface-variant/80">
-          {user.id}
-        </span>
-      </p>
     </div>
   );
 }
