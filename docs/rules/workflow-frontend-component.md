@@ -198,7 +198,7 @@ Always handle:
 ## 🔐 6. Authentication Rules
 
 * Use Clerk components and hooks (`SignIn`, `SignUp`, `useUser`, etc.)
-* Protect authenticated routes (my-boards, board views)
+* Protect authenticated routes (`/my-boards`, `/dashboard`, board views)
 * Redirect unauthenticated users to sign-in
 
 ---

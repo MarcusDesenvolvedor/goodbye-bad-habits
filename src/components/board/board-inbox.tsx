@@ -47,7 +47,7 @@ export const WORKSPACE_INBOX_ZONE_ID = "workspace-inbox-zone";
 
 const inboxCardSurfaceClass = "stitch-kanban-card-surface touch-none p-3";
 
-const inboxCardInteractiveClass = `${inboxCardSurfaceClass} transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(103,80,164,0.12)]`;
+const inboxCardInteractiveClass = `${inboxCardSurfaceClass} transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(103,80,164,0.12)] dark:hover:shadow-[0_8px_24px_rgba(167,139,250,0.1)]`;
 
 const inboxInputClass =
   "w-full rounded-xl border-0 bg-ds-surface-container-high px-2 py-1.5 text-xs text-ds-on-surface outline-none ring-0 placeholder:text-ds-on-surface-variant focus:bg-ds-surface-container-lowest focus:ring-2 focus:ring-ds-primary-container/25";
@@ -56,7 +56,7 @@ const modalOverlayClass =
   "stitch-modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-200 ease-out";
 
 const modalPanelClass =
-  "max-h-[min(85vh,720px)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-ds-surface-container-lowest p-6 shadow-[0_24px_64px_rgba(26,28,28,0.12)] ring-1 ring-ds-on-surface/[0.06] transition-[opacity,transform] duration-200 ease-out";
+  "max-h-[min(85vh,720px)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-ds-surface-container-lowest p-6 shadow-[0_24px_64px_rgba(26,28,28,0.12)] ring-1 ring-ds-on-surface/[0.06] transition-[opacity,transform,box-shadow,border-color] duration-200 ease-out dark:border dark:border-slate-700/50 dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)] dark:ring-slate-600/30";
 
 const modalBtnPrimary =
   "stitch-btn-primary px-4 py-2 text-xs font-bold uppercase tracking-widest";
@@ -287,7 +287,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
       style={style}
       className={
         isDragging
-          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-ds-primary-container/45 bg-ds-surface-container-lowest/90 p-3 shadow-[0_1px_3px_rgba(26,28,28,0.08)]"
+          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-ds-primary-container/45 bg-ds-surface-container-lowest/90 p-3 shadow-[0_1px_3px_rgba(26,28,28,0.08)] transition-colors duration-300 dark:border-slate-600/50 dark:shadow-[0_1px_0_rgba(0,0,0,0.45)]"
           : `group/card relative z-0 cursor-grab text-left hover:z-10 active:cursor-grabbing ${inboxCardInteractiveClass}`
       }
       {...attributes}
@@ -390,7 +390,7 @@ export const InboxSortableCard = memo(function InboxSortableCard({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-xs font-semibold text-red-300/90 transition hover:bg-red-500/10"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold text-red-300/90 transition-colors duration-200 hover:bg-red-500/10 dark:hover:bg-red-950/40"
                 onClick={() => {
                   onDeleteTask(task.id);
                   closeMenu();
@@ -747,7 +747,7 @@ export function BoardInboxSection({
       return;
     }
     onAddInboxTask({
-      id: `inbox-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       title: trimmed,
       description: "",
     });
@@ -759,7 +759,7 @@ export function BoardInboxSection({
       className="w-full shrink-0 lg:w-[min(100%,300px)]"
       aria-label="Inbox"
     >
-      <section className="stitch-glass-panel rounded-2xl p-4 lg:p-5">
+      <section className="stitch-glass-panel rounded-2xl p-4 transition-colors duration-300 lg:p-5">
         <div className="relative z-0 mb-3 border-b border-ds-outline-variant/25 pb-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-ds-on-surface-variant">
             Inbox
@@ -778,7 +778,7 @@ export function BoardInboxSection({
             items={tasks.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex min-h-[min(70vh,720px)] max-h-[min(70vh,720px)] flex-col gap-2 overflow-y-auto pb-4 pr-1">
+            <div className="ds-scroll-thin flex min-h-[min(70vh,720px)] max-h-[min(70vh,720px)] flex-col gap-2 overflow-x-hidden overflow-y-auto pb-4 pr-1">
               {tasks.length === 0 ? (
                 <>
                   {dropIndicatorIndex === 0 ? (
@@ -822,7 +822,7 @@ export function BoardInboxSection({
                 ) : (
                   <form
                     onSubmit={handleSubmit}
-                    className="rounded-xl border-0 bg-ds-surface-container-high p-4 shadow-sm ring-1 ring-ds-on-surface/[0.04]"
+                    className="rounded-xl border-0 bg-ds-surface-container-high p-4 shadow-sm ring-1 ring-ds-on-surface/[0.04] transition-colors duration-300 dark:border dark:border-slate-700/40 dark:shadow-[0_1px_0_rgba(0,0,0,0.35)] dark:ring-slate-600/20"
                   >
                     <input
                       autoFocus

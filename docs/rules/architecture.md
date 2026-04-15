@@ -47,12 +47,15 @@ The project follows a **feature-oriented and layered structure**.
 ```bash
 /src
   /app
-    /(public)
-      page.tsx
-    /my-boards
-      page.tsx
-    /board/[boardId]
-      page.tsx
+    page.tsx                 # landing (public)
+    /(workspace)             # route group — shared authenticated shell (URLs unchanged)
+      layout.tsx             # global Stitch sidebar + main offset (pl-64)
+      /dashboard
+        page.tsx             # workspace “Tasks” overview (stats / priorities)
+      /my-boards
+        page.tsx             # all boards — list, create, open board
+      /board/[boardId]
+        page.tsx             # one board = one project; Kanban workspace
     /api
       /boards
         route.ts
@@ -97,6 +100,18 @@ The project follows a **feature-oriented and layered structure**.
       /notification
         feature.md
 ```
+
+---
+
+## Global navigation (release 0.2)
+
+Authenticated flow follows the **Google Stitch “Telas KANBAN”** hierarchy:
+
+1. **Landing** (`/`) → **Sign up / Sign in** (Clerk) → **`/my-boards`** (all projects as boards).
+2. User **opens a board** → **`/board/[boardId]`** (that board is the project dashboard; Kanban = task workspace).
+3. **`/dashboard`** is the workspace **Tasks** view (overview widgets, priorities, activity) — not the per-board dashboard.
+
+The **sidebar** (`AtelierAppShell`) is mounted once in `app/(workspace)/layout.tsx` so **`/my-boards`**, **`/dashboard`**, and **`/board/*`** share the same fixed `<aside>`; main content uses **left padding** to clear the sidebar. Active nav items use **Stitch / Material tokens** (`bg-ds-primary-fixed`, `text-ds-on-primary-fixed-variant`); inactive rows use a clear **`hover:bg-purple-100`** affordance aligned with the design export.
 
 ---
 
@@ -255,4 +270,4 @@ The system must NEVER:
 
 **Status:** Active  
 **Type:** Architecture Definition  
-**Version:** 0.0
+**Version:** 0.2

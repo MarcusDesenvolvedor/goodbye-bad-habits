@@ -26,7 +26,7 @@ Reference assets (HTML + screenshot) may be downloaded locally via `scripts/fetc
 
 The **board workspace** (`/board/[boardId]`) includes a left **Inbox** and **Kanban** columns under one **shared** drag-and-drop context (`BoardWorkspace`): tasks can move between Inbox and columns (To do / In progress / Done) and reorder within each area (mock data until List/Card are persisted via the API).
 
-**My boards** (`/my-boards`) uses the same **Bauhaus** vocabulary for listing workspaces, creating boards, and opening `/board/[id]`.
+**All boards** (`/my-boards`) lists every board the user owns, supports **create**, and links to **`/board/[boardId]`**. The **global sidebar** (Stitch “Telas KANBAN” / Atelier shell) wraps **`/my-boards`**, **`/dashboard`**, and **`/board/*`** via `app/(workspace)/layout.tsx`. **`/dashboard`** is the workspace **Tasks** overview (stats, priorities, activity — no embedded board list). Each **board** is treated as an independent **project**.
 
 ---
 
@@ -53,7 +53,7 @@ Normative text: [business-logic.md](../../business-logic.md), [requirements.md](
 
 ### List boards
 
-1. Authenticated user opens **My boards** (`/my-boards`) or calls `GET /api/boards`.
+1. Authenticated user opens **All boards** (`/my-boards`) or calls `GET /api/boards`.
 2. Server resolves Clerk session → app `User`, returns boards where `userId` matches.
 
 ### Create board
@@ -92,9 +92,10 @@ Normative text: [business-logic.md](../../business-logic.md), [requirements.md](
 
 ## UI behavior
 
-- **My boards** (`/my-boards`): Bauhaus-styled list of workspaces, create board control, links to `/board/[id]`. Legacy path `/dashboard` redirects here.
-- **Board** (`/board/[boardId]`): Bauhaus shell with title/edit; **Kanban** mock preview (columns, cards, DnD) until List/Card backend feature ships.
-- Routes under `/my-boards` and `/board` are **protected** by Clerk middleware.
+- **All boards** (`/my-boards`): Stitch-aligned list + create; anchor `#create-board` for “New board” from the sidebar.
+- **Tasks overview** (`/dashboard`): Stitch “Project overview” style metrics and priorities (search bar hidden on this route).
+- **Board** (`/board/[boardId]`): per-project shell; board chrome links back to **Tasks** (`/dashboard`) and **All boards** (`/my-boards`). **Kanban** mock preview until List/Card backend ships.
+- Routes **`/my-boards`**, **`/dashboard`**, and **`/board`** are **protected** by Clerk middleware.
 
 ---
 

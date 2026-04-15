@@ -60,7 +60,7 @@ No webhook is required for this MVP; sync is **lazy on first API call** after lo
 ## UI behavior (minimal)
 
 - **Public:** landing at `/` with links to sign in / sign up (Clerk components).
-- **Protected:** `/my-boards` — list of boards after auth (Bauhaus layout); `/dashboard` redirects to `/my-boards`.
+- **Protected (workspace shell):** `/my-boards`, `/dashboard`, and `/board/*` — Clerk middleware; `SignIn` / `SignUp` use `forceRedirectUrl="/my-boards"`. Signed-in `/` redirects to **`/my-boards`** (all boards). User sync still runs on first load of these pages or via `GET /api/me`.
 
 ---
 

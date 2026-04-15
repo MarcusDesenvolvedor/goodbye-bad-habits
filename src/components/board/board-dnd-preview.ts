@@ -1,4 +1,4 @@
-import type { ColumnTasks, KanbanColumnId } from "./board-kanban-mock";
+import type { ColumnTasks, KanbanColumnId } from "./board-kanban-model";
 
 /** Keep in sync with `WORKSPACE_INBOX_ZONE_ID` in `board-inbox.tsx`. */
 const INBOX_DROP_ZONE_ID = "workspace-inbox-zone";

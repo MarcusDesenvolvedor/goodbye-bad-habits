@@ -8,7 +8,7 @@ export default function SignUpPage() {
       <p className="text-center text-xs font-bold uppercase tracking-[0.35em] text-ds-primary">
         Goodbye Bad Habits
       </p>
-      <SignUp appearance={clerkBauhausAppearance} />
+      <SignUp appearance={clerkBauhausAppearance} forceRedirectUrl="/my-boards" />
     </div>
   );
 }

@@ -109,7 +109,7 @@ The application is **web-only**; authorization is always enforced on the server.
 
 ## 🌐 10. Routing Rules (illustrative)
 
-- Board view may live at `/board/[boardId]` (or under a dashboard prefix)
+- Board view lives at `/board/[boardId]`; authenticated shell and board list live under `/my-boards` and `/dashboard` (see `docs/rules/architecture.md` — navigation v0.2).
 - Board IDs in URLs must still pass ownership checks on every request
 
 ---

@@ -1,10 +1,16 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 /*
  * Etheric Kanban — design tokens from Google Stitch
  * Project: Telas KANBAN (15327930427196675458)
  * Design system asset: assets/b88987626e0c48bcaff896db748b3a1a
  * HTML reference: docs/design/stitch-telas-kanban/*.html
+ *
+ * Dark palette: app-maintained Material 3–style roles (no dark export in Stitch JSON).
+ * Surfaces: slate-950 / 900 / 800 hierarchy; brand: violet/lavender for WCAG on deep navy.
  */
 :root {
   /* DTCG / M3 named colors (exact hex from Stitch export) */
@@ -25,11 +31,17 @@
   --ds-on-surface-variant: #494551;
   --ds-outline-variant: #cbc4d2;
   --ds-primary-fixed: #e9ddff;
+  --ds-on-primary-fixed: #1a1c1c;
   --ds-on-primary-fixed-variant: #4f378a;
   --ds-secondary-fixed: #eaddff;
   --ds-on-secondary-fixed-variant: #4b425d;
   --ds-surface-tint: #6750a4;
   --ds-error: #ba1a1a;
+  --ds-tertiary: #765b00;
+  --ds-tertiary-container: #c9a74d;
+  --ds-tertiary-fixed: #ffdf93;
+  --ds-on-tertiary-fixed-variant: #594400;
+  --ds-surface-bright: #f9f9f9;
 
   /* Legacy app aliases (board + marketing) → light editorial theme */
   --stitch-bg: #f3f3f3;
@@ -51,41 +63,132 @@
   --foreground: var(--ds-on-surface);
 }
 
+html.dark {
+  --ds-primary: #c4b5fd;
+  --ds-primary-container: #a78bfa;
+  --ds-on-primary: #1e1b4b;
+  --ds-secondary: #94a3b8;
+  --ds-secondary-container: #334155;
+  --ds-on-secondary-container: #e2e8f0;
+  --ds-surface: #020617;
+  --ds-surface-container-low: #0f172a;
+  --ds-surface-container: #1e293b;
+  --ds-surface-container-high: #334155;
+  --ds-surface-container-highest: #3f4f63;
+  --ds-surface-container-lowest: #1e293b;
+  --ds-surface-variant: #334155;
+  --ds-on-surface: #f1f5f9;
+  --ds-on-surface-variant: #94a3b8;
+  --ds-outline-variant: #475569;
+  --ds-primary-fixed: #312e81;
+  --ds-on-primary-fixed: #e0e7ff;
+  --ds-on-primary-fixed-variant: #c4b5fd;
+  --ds-secondary-fixed: #1e293b;
+  --ds-on-secondary-fixed-variant: #cbd5e1;
+  --ds-surface-tint: #a78bfa;
+  --ds-error: #f87171;
+  --ds-tertiary: #fcd34d;
+  --ds-tertiary-container: #92400e;
+  --ds-tertiary-fixed: #422006;
+  --ds-on-tertiary-fixed-variant: #fde68a;
+  --ds-surface-bright: #1e293b;
+
+  --stitch-bg: #0f172a;
+  --stitch-bg-soft: #1e293b;
+  --stitch-surface: color-mix(in srgb, var(--ds-surface-container-lowest) 88%, transparent);
+  --stitch-surface-card: #1e293b;
+  --stitch-border: rgba(148, 163, 184, 0.22);
+  --stitch-text: #f1f5f9;
+  --stitch-muted: #94a3b8;
+  --stitch-blue: #c4b5fd;
+  --stitch-cyan: #a78bfa;
+  --stitch-purple: #a78bfa;
+  --stitch-header: color-mix(in srgb, var(--ds-surface-container-lowest) 78%, transparent);
+  --stitch-m3-primary: #a78bfa;
+  --stitch-m3-surface-container: #1e293b;
+  --stitch-drag-slot: #a78bfa;
+  --stitch-focus-ring: rgba(167, 139, 250, 0.45);
+  --background: var(--ds-surface);
+  --foreground: var(--ds-on-surface);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 
-  --color-ds-primary: #4f378a;
-  --color-ds-primary-container: #6750a4;
-  --color-ds-on-primary: #ffffff;
-  --color-ds-secondary-container: #eaddff;
-  --color-ds-on-secondary-container: #69607c;
-  --color-ds-surface: #f9f9f9;
-  --color-ds-surface-container-low: #f3f3f3;
-  --color-ds-surface-container: #eeeeee;
-  --color-ds-surface-container-high: #e8e8e8;
-  --color-ds-surface-container-lowest: #ffffff;
-  --color-ds-on-surface: #1a1c1c;
-  --color-ds-on-surface-variant: #494551;
-  --color-ds-outline-variant: #cbc4d2;
-  --color-ds-primary-fixed: #e9ddff;
-  --color-ds-on-primary-fixed-variant: #4f378a;
-  --color-ds-error: #ba1a1a;
+  --color-ds-primary: var(--ds-primary);
+  --color-ds-primary-container: var(--ds-primary-container);
+  --color-ds-on-primary: var(--ds-on-primary);
+  --color-ds-secondary: var(--ds-secondary);
+  --color-ds-secondary-container: var(--ds-secondary-container);
+  --color-ds-on-secondary-container: var(--ds-on-secondary-container);
+  --color-ds-surface: var(--ds-surface);
+  --color-ds-surface-container-low: var(--ds-surface-container-low);
+  --color-ds-surface-container: var(--ds-surface-container);
+  --color-ds-surface-container-high: var(--ds-surface-container-high);
+  --color-ds-surface-container-highest: var(--ds-surface-container-highest);
+  --color-ds-surface-container-lowest: var(--ds-surface-container-lowest);
+  --color-ds-surface-variant: var(--ds-surface-variant);
+  --color-ds-on-surface: var(--ds-on-surface);
+  --color-ds-on-surface-variant: var(--ds-on-surface-variant);
+  --color-ds-outline-variant: var(--ds-outline-variant);
+  --color-ds-primary-fixed: var(--ds-primary-fixed);
+  --color-ds-on-primary-fixed: var(--ds-on-primary-fixed);
+  --color-ds-on-primary-fixed-variant: var(--ds-on-primary-fixed-variant);
+  --color-ds-error: var(--ds-error);
+  --color-ds-tertiary: var(--ds-tertiary);
+  --color-ds-tertiary-container: var(--ds-tertiary-container);
+  --color-ds-tertiary-fixed: var(--ds-tertiary-fixed);
+  --color-ds-on-tertiary-fixed-variant: var(--ds-on-tertiary-fixed-variant);
+  --color-ds-secondary-fixed: var(--ds-secondary-fixed);
+  --color-ds-on-secondary-fixed-variant: var(--ds-on-secondary-fixed-variant);
+  --color-ds-surface-bright: var(--ds-surface-bright);
 }
 
 body {
   background: var(--ds-surface);
   color: var(--ds-on-surface);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  transition:
+    background-color 300ms ease,
+    color 300ms ease;
 }
 
-/* Kanban / modals — exported Stitch utilities */
+/* Kanban / modals — Google Stitch “Etheric Kanban” (Telas KANBAN) */
+.stitch-ambient-glow {
+  transition:
+    box-shadow 0.2s ease-in-out,
+    transform 0.2s ease-in-out,
+    border-color 0.2s ease-in-out;
+}
+.stitch-ambient-glow:hover {
+  box-shadow: 0 8px 24px rgba(103, 80, 164, 0.08);
+  transform: scale(1.02);
+}
+.stitch-ambient-glow:active {
+  transform: scale(0.98);
+}
+
+html.dark .stitch-ambient-glow:hover {
+  box-shadow: 0 8px 28px rgba(167, 139, 250, 0.12);
+}
+
 .stitch-kanban-card-surface {
   border-radius: 0.75rem;
   background: var(--ds-surface-container-lowest);
   box-shadow: 0 1px 2px rgba(26, 28, 28, 0.06);
+  border: 1px solid transparent;
+  transition:
+    background-color 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+
+html.dark .stitch-kanban-card-surface {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  border-color: color-mix(in srgb, var(--ds-outline-variant) 50%, transparent);
 }
 
 .stitch-glass-panel {
@@ -94,6 +197,15 @@ body {
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   box-shadow: 0 8px 32px rgba(103, 80, 164, 0.08);
+  transition:
+    background-color 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+
+html.dark .stitch-glass-panel {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ds-outline-variant) 45%, transparent);
 }
 
 .stitch-glass-panel-dense {
@@ -103,12 +215,26 @@ body {
   backdrop-filter: blur(16px);
   box-shadow: 0 12px 40px rgba(26, 28, 28, 0.08);
   border: 1px solid color-mix(in srgb, var(--ds-outline-variant) 18%, transparent);
+  transition:
+    background-color 300ms ease,
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+
+html.dark .stitch-glass-panel-dense {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+  border-color: color-mix(in srgb, var(--ds-outline-variant) 50%, transparent);
 }
 
 .stitch-modal-overlay {
   background: color-mix(in srgb, var(--ds-on-surface) 22%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+  transition: background-color 300ms ease;
+}
+
+html.dark .stitch-modal-overlay {
+  background: color-mix(in srgb, #020617 72%, transparent);
 }
 
 .stitch-btn-primary {
@@ -116,27 +242,50 @@ body {
   background: linear-gradient(145deg, #4f378a 0%, #6750a4 100%);
   color: #fff;
   box-shadow: 0 8px 24px rgba(103, 80, 164, 0.2);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  transition:
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out,
+    background 0.2s ease-out;
+}
+
+html.dark .stitch-btn-primary {
+  background: linear-gradient(145deg, #6d28d9 0%, #a78bfa 100%);
+  box-shadow: 0 6px 20px rgba(167, 139, 250, 0.22);
 }
 
 .stitch-btn-primary:hover {
   transform: scale(1.05);
 }
 
+.stitch-btn-primary:active {
+  transform: scale(0.95);
+}
+
 .stitch-btn-secondary {
   border-radius: 0.75rem;
   background: var(--ds-secondary-container);
   color: var(--ds-on-secondary-container);
-  transition: transform 0.15s ease-out, background 0.15s ease-out;
+  transition:
+    transform 0.15s ease-out,
+    background 0.15s ease-out,
+    color 0.2s ease-out;
 }
 
 .stitch-btn-secondary:hover {
   transform: scale(1.02);
 }
 
+.stitch-btn-secondary:active {
+  transform: scale(0.98);
+}
+
 .stitch-accent-bar {
   border-radius: 9999px;
   background: linear-gradient(145deg, #4f378a 0%, #6750a4 100%);
+}
+
+html.dark .stitch-accent-bar {
+  background: linear-gradient(145deg, #7c3aed 0%, #c4b5fd 100%);
 }
 
 @keyframes card-drop-slot-pulse {
@@ -152,4 +301,43 @@ body {
 .animate-card-drop-slot {
   animation: card-drop-slot-pulse 1.8s ease-in-out infinite;
   will-change: opacity;
+}
+
+/* Thin scrollbars aligned with DS surfaces (Kanban board + columns) */
+.ds-scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ds-outline-variant) 65%, transparent)
+    color-mix(in srgb, var(--ds-surface-container-high) 40%, transparent);
+}
+
+.ds-scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ds-scroll-thin::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--ds-surface-container-low) 55%, transparent);
+  border-radius: 9999px;
+}
+
+.ds-scroll-thin::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ds-outline-variant) 75%, transparent);
+  border-radius: 9999px;
+}
+
+.ds-scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--ds-on-surface-variant) 35%, transparent);
+}
+
+html.dark .ds-scroll-thin {
+  scrollbar-color: color-mix(in srgb, var(--ds-outline-variant) 45%, transparent)
+    color-mix(in srgb, var(--ds-surface-container) 50%, transparent);
+}
+
+html.dark .ds-scroll-thin::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--ds-surface-container) 40%, transparent);
+}
+
+html.dark .ds-scroll-thin::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ds-outline-variant) 55%, transparent);
 }

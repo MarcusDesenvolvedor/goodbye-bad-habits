@@ -21,7 +21,19 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useCallback, useMemo, useRef, useState, type RefObject } from "react";
+import { useUser } from "@clerk/nextjs";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+
+import type { WorkspaceSaveBody } from "@/features/board/board.schema";
+import type { BoardWorkspaceJson, CardJson } from "@/features/board/board.types";
 
 import { computeBoardDropIndicators } from "./board-dnd-preview";
 import {
@@ -29,10 +41,8 @@ import {
   type ColumnTasks,
   type KanbanColumnId,
   type KanbanTask,
-  KANBAN_COLUMN_META,
-  KANBAN_COLUMN_ORDER,
-  createMockKanbanColumns,
-} from "./board-kanban-mock";
+  columnMetaForListTitle,
+} from "./board-kanban-model";
 import {
   BoardInboxSection,
   InboxCardPreview,
@@ -96,6 +106,109 @@ function findWorkspaceContainer(
   return findKanbanContainer(columnOrder, columns, id);
 }
 
+function workspaceToUiState(workspace: BoardWorkspaceJson) {
+  const listsSorted = [...workspace.lists].sort((a, b) => a.position - b.position);
+  const inboxList = listsSorted[0];
+  const kanbanLists = listsSorted.slice(1);
+  if (!inboxList) {
+    throw new Error("Board workspace has no lists");
+  }
+  const inboxListId = inboxList.id;
+  const columnOrder = kanbanLists.map((l) => l.id);
+  const columnMeta: Record<string, ColumnMeta> = {};
+  kanbanLists.forEach((l, i) => {
+    columnMeta[l.id] = columnMetaForListTitle(l.title, i);
+  });
+  const columns: ColumnTasks = {};
+  for (const id of columnOrder) {
+    columns[id] = [];
+  }
+  const cardsByList = new Map<string, CardJson[]>();
+  for (const c of workspace.cards) {
+    const arr = cardsByList.get(c.listId) ?? [];
+    arr.push(c);
+    cardsByList.set(c.listId, arr);
+  }
+  for (const [, arr] of cardsByList) {
+    arr.sort((a, b) => a.position - b.position);
+  }
+  const inboxTasks: InboxTask[] = (cardsByList.get(inboxListId) ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description ?? "",
+  }));
+  for (const listId of columnOrder) {
+    columns[listId] = (cardsByList.get(listId) ?? []).map((c) => ({
+      id: c.id,
+      title: c.title,
+      description: c.description ?? "",
+      tags: [] as string[],
+      dueAt: c.dueAt ? c.dueAt.slice(0, 10) : undefined,
+    }));
+  }
+  return {
+    inboxListId,
+    inboxListTitle: inboxList.title,
+    inboxTasks,
+    columnOrder,
+    columnMeta,
+    columns,
+  };
+}
+
+function buildWorkspaceSavePayload(
+  inboxListId: string,
+  inboxListTitle: string,
+  inboxTasks: InboxTask[],
+  columnOrder: string[],
+  columnMeta: Record<string, ColumnMeta>,
+  columns: ColumnTasks,
+): WorkspaceSaveBody {
+  const lists: WorkspaceSaveBody["lists"] = [
+    { id: inboxListId, title: inboxListTitle.trim() || "Inbox", position: 0 },
+    ...columnOrder.map((id, index) => ({
+      id,
+      title: (columnMeta[id]?.title ?? "List").trim() || "List",
+      position: index + 1,
+    })),
+  ];
+  const cards: WorkspaceSaveBody["cards"] = [];
+  inboxTasks.forEach((t, position) => {
+    cards.push({
+      id: t.id,
+      listId: inboxListId,
+      title: t.title.trim() || "Untitled",
+      description: t.description.trim() ? t.description : null,
+      position,
+      dueAt: null,
+    });
+  });
+  for (const listId of columnOrder) {
+    const tasks = columns[listId] ?? [];
+    tasks.forEach((t, position) => {
+      const dueRaw = t.dueAt?.trim();
+      const dueAt =
+        dueRaw == null || dueRaw === ""
+          ? null
+          : new Date(`${dueRaw}T12:00:00.000Z`).toISOString();
+      cards.push({
+        id: t.id,
+        listId: listId,
+        title: t.title.trim() || "Untitled",
+        description: t.description.trim() ? t.description : null,
+        position,
+        dueAt,
+      });
+    });
+  }
+  return { lists, cards };
+}
+
+type BoardWorkspaceProps = {
+  workspace: BoardWorkspaceJson;
+  onPersist: (body: WorkspaceSaveBody) => Promise<void>;
+};
+
 function createColumnAwareCollision(
   dragTypeRef: RefObject<"card" | "column" | null>,
   stateRef: RefObject<{ columnOrder: string[] }>,
@@ -118,35 +231,65 @@ function createColumnAwareCollision(
   };
 }
 
-export function BoardWorkspace() {
-  const [inboxTasks, setInboxTasks] = useState<InboxTask[]>(() => [
-    {
-      id: "inbox-task-1",
-      title: "Review notes",
-      description: "From the last planning session.",
-    },
-    {
-      id: "inbox-task-2",
-      title: "Follow up email",
-      description: "",
-    },
-    {
-      id: "inbox-task-3",
-      title: "Habit streak widget",
-      description: "Sketch states for empty vs active streak.",
-    },
+export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
+  const { user } = useUser();
+  const defaultCardCreator = useMemo(
+    () => ({
+      creatorImageUrl: user?.imageUrl ?? undefined,
+      creatorName:
+        user?.fullName ??
+        user?.primaryEmailAddress?.emailAddress ??
+        undefined,
+    }),
+    [
+      user?.imageUrl,
+      user?.fullName,
+      user?.primaryEmailAddress?.emailAddress,
+    ],
+  );
+  const defaultCardCreatorRef = useRef(defaultCardCreator);
+  useLayoutEffect(() => {
+    defaultCardCreatorRef.current = defaultCardCreator;
+  }, [defaultCardCreator]);
+
+  const pack = useMemo(() => workspaceToUiState(workspace), [workspace]);
+
+  const inboxListId = pack.inboxListId;
+  const [inboxTasks, setInboxTasks] = useState(pack.inboxTasks);
+  const [columns, setColumns] = useState(pack.columns);
+  const [columnOrder, setColumnOrder] = useState(pack.columnOrder);
+  const [columnMeta, setColumnMeta] = useState(pack.columnMeta);
+
+  const skipNextPersist = useRef(true);
+  useEffect(() => {
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
+    const handle = setTimeout(() => {
+      const payload = buildWorkspaceSavePayload(
+        inboxListId,
+        pack.inboxListTitle,
+        inboxTasks,
+        columnOrder,
+        columnMeta,
+        columns,
+      );
+      void onPersist(payload);
+    }, 450);
+    return () => clearTimeout(handle);
+  }, [
+    inboxListId,
+    pack.inboxListTitle,
+    inboxTasks,
+    columnOrder,
+    columnMeta,
+    columns,
+    onPersist,
   ]);
 
-  const [columns, setColumns] = useState<ColumnTasks>(() =>
-    createMockKanbanColumns(),
-  );
-
-  const [columnOrder, setColumnOrder] = useState<string[]>(
-    () => [...KANBAN_COLUMN_ORDER],
-  );
-
-  const [columnMeta, setColumnMeta] = useState<Record<string, ColumnMeta>>(
-    () => ({ ...KANBAN_COLUMN_META }),
+  const [dragSurfaceKind, setDragSurfaceKind] = useState<"card" | "column" | null>(
+    null,
   );
 
   const [dndPointer, setDndPointer] = useState<{
@@ -173,12 +316,16 @@ export function BoardWorkspace() {
   );
 
   const stateRef = useRef({ inboxTasks, columns, columnOrder });
-  stateRef.current = { inboxTasks, columns, columnOrder };
+  useLayoutEffect(() => {
+    stateRef.current = { inboxTasks, columns, columnOrder };
+  }, [inboxTasks, columns, columnOrder]);
 
   const dragTypeRef = useRef<"card" | "column" | null>(null);
 
   const columnAwareCollision = useMemo(
-    () => createColumnAwareCollision(dragTypeRef, stateRef),
+    () =>
+      // eslint-disable-next-line react-hooks/refs -- refs read only when dnd-kit invokes collision
+      createColumnAwareCollision(dragTypeRef, stateRef),
     [],
   );
 
@@ -209,16 +356,16 @@ export function BoardWorkspace() {
 
   const activeKanbanTask = useMemo(
     () =>
-      activeId && dragTypeRef.current !== "column"
+      activeId && dragSurfaceKind !== "column"
         ? findKanbanTask(columnOrder, columns, activeId)
         : undefined,
-    [activeId, columnOrder, columns],
+    [activeId, columnOrder, columns, dragSurfaceKind],
   );
 
   const activeColumnForDrag = useMemo(() => {
-    if (!activeId || dragTypeRef.current !== "column") return undefined;
+    if (!activeId || dragSurfaceKind !== "column") return undefined;
     return columnOrder.includes(activeId) ? activeId : undefined;
-  }, [activeId, columnOrder]);
+  }, [activeId, columnOrder, dragSurfaceKind]);
 
   const isColumnDrag = !!activeColumnForDrag;
 
@@ -253,6 +400,7 @@ export function BoardWorkspace() {
 
       const isColumnDrag = columnOrder.includes(id);
       dragTypeRef.current = isColumnDrag ? "column" : "card";
+      setDragSurfaceKind(isColumnDrag ? "column" : "card");
 
       dragSnapshotRef.current = {
         inboxTasks: inboxTasks.map((t) => ({ ...t })),
@@ -349,6 +497,7 @@ export function BoardWorkspace() {
     activeContainerRef.current = overContainer;
 
     if (activeContainer === "inbox") {
+      const dc = defaultCardCreatorRef.current;
       const kanbanTask: KanbanTask = {
         id: dragTask.id,
         title: dragTask.title,
@@ -356,6 +505,8 @@ export function BoardWorkspace() {
         tags: dragTask.tags,
         label: dragTask.label,
         dueAt: dragTask.dueAt,
+        creatorImageUrl: dc.creatorImageUrl,
+        creatorName: dc.creatorName,
       };
       setInboxTasks((prev) => prev.filter((t) => t.id !== activeIdStr));
       const targetCol = overContainer as KanbanColumnId;
@@ -428,6 +579,7 @@ export function BoardWorkspace() {
     activeContainerRef.current = null;
     activeDragTaskRef.current = null;
     dragTypeRef.current = null;
+    setDragSurfaceKind(null);
     setDragSlotMinHeightPx(null);
     setDndPointer({ activeId: null, overId: null });
   }, []);
@@ -441,6 +593,7 @@ export function BoardWorkspace() {
     activeContainerRef.current = null;
     activeDragTaskRef.current = null;
     dragTypeRef.current = null;
+    setDragSurfaceKind(null);
     setDragSlotMinHeightPx(null);
     setDndPointer({ activeId: null, overId: null });
 
@@ -476,9 +629,15 @@ export function BoardWorkspace() {
 
   const handleAddKanbanCard = useCallback(
     (columnId: KanbanColumnId, task: KanbanTask) => {
+      const dc = defaultCardCreatorRef.current;
+      const enriched: KanbanTask = {
+        ...task,
+        creatorImageUrl: task.creatorImageUrl ?? dc.creatorImageUrl,
+        creatorName: task.creatorName ?? dc.creatorName,
+      };
       setColumns((prev) => ({
         ...prev,
-        [columnId]: [...(prev[columnId] ?? []), task],
+        [columnId]: [...(prev[columnId] ?? []), enriched],
       }));
     },
     [],
@@ -497,7 +656,7 @@ export function BoardWorkspace() {
 
   const handleAddColumn = useCallback(
     (title: string, accent: { accentBarClass: string; columnShellClass: string }) => {
-      const id = `list-${crypto.randomUUID()}`;
+      const id = crypto.randomUUID();
       setColumnOrder((prev) => [...prev, id]);
       setColumnMeta((prev) => ({
         ...prev,
@@ -543,7 +702,7 @@ export function BoardWorkspace() {
 
   const handleDuplicateKanbanCard = useCallback(
     (columnId: KanbanColumnId, task: KanbanTask) => {
-      const copy: KanbanTask = { ...task, id: `mock-${crypto.randomUUID()}` };
+      const copy: KanbanTask = { ...task, id: crypto.randomUUID() };
       setColumns((prev) => ({
         ...prev,
         [columnId]: [...(prev[columnId] ?? []), copy],
@@ -568,13 +727,16 @@ export function BoardWorkspace() {
 
   const handleDuplicateInboxTask = useCallback((task: InboxTask) => {
     if (selectedKanbanColumnId) {
+      const dc = defaultCardCreatorRef.current;
       const kanbanTask: KanbanTask = {
-        id: `mock-${crypto.randomUUID()}`,
+        id: crypto.randomUUID(),
         title: task.title,
         description: task.description,
         tags: [],
         label: task.label,
         dueAt: undefined,
+        creatorImageUrl: dc.creatorImageUrl,
+        creatorName: dc.creatorName,
       };
       setColumns((prev) => ({
         ...prev,
@@ -587,7 +749,7 @@ export function BoardWorkspace() {
     }
     const copy: InboxTask = {
       ...task,
-      id: `inbox-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       comments: task.comments?.length ? [...task.comments] : undefined,
     };
     setInboxTasks((prev) => [...prev, copy]);
@@ -630,7 +792,7 @@ export function BoardWorkspace() {
       onDragCancel={handleDragCancel}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      <div className="flex flex-col gap-6 transition-colors duration-300 lg:flex-row lg:items-start">
         <BoardInboxSection
           tasks={inboxTasks}
           onAddInboxTask={handleAddInboxTask}
@@ -660,7 +822,6 @@ export function BoardWorkspace() {
             onAddWorkspaceCustomLabel={handleAddWorkspaceCustomLabel}
             columnDropIndicators={columnDropIndicators}
             dropSlotMinHeightPx={dragSlotMinHeightPx}
-            isColumnDragActive={isColumnDrag}
           />
         </div>
       </div>
@@ -668,7 +829,6 @@ export function BoardWorkspace() {
         {activeColumnForDrag && columnMeta[activeColumnForDrag] ? (
           <ColumnDragPreview
             title={columnMeta[activeColumnForDrag].title}
-            meta={columnMeta[activeColumnForDrag]}
             taskCount={(columns[activeColumnForDrag] ?? []).length}
           />
         ) : activeInboxTask ? (

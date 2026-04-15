@@ -1,6 +1,6 @@
 {
   "name": "goodbye-bad-habits",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -20,7 +20,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@prisma/client": "6.19.3",
-    "framer-motion": "^12.38.0",
     "next": "16.2.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",

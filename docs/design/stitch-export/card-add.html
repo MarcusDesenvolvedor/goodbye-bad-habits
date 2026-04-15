@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atelier Kanban - Create New</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#dadada",
+                        "inverse-primary": "#cfbcff",
+                        "primary-fixed": "#e9ddff",
+                        "surface-variant": "#e2e2e2",
+                        "surface-bright": "#f9f9f9",
+                        "tertiary-fixed": "#ffdf93",
+                        "on-secondary-fixed-variant": "#4b425d",
+                        "surface-container-highest": "#e2e2e2",
+                        "primary-container": "#6750a4",
+                        "primary": "#4f378a",
+                        "on-primary": "#ffffff",
+                        "background": "#f9f9f9",
+                        "on-tertiary-fixed-variant": "#594400",
+                        "secondary": "#635a76",
+                        "on-secondary-fixed": "#1f1730",
+                        "on-tertiary-fixed": "#241a00",
+                        "on-primary-container": "#e0d2ff",
+                        "on-primary-fixed": "#22005d",
+                        "surface": "#f9f9f9",
+                        "surface-tint": "#6750a4",
+                        "error-container": "#ffdad6",
+                        "outline": "#7a7582",
+                        "tertiary-container": "#c9a74d",
+                        "surface-container-high": "#e8e8e8",
+                        "secondary-fixed-dim": "#cdc1e2",
+                        "secondary-container": "#eaddff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f3f3f3",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#69607c",
+                        "on-tertiary-container": "#503d00",
+                        "on-surface": "#1a1c1c",
+                        "inverse-surface": "#2f3131",
+                        "surface-container": "#eeeeee",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#f1f1f1",
+                        "primary-fixed-dim": "#cfbcff",
+                        "tertiary": "#765b00",
+                        "tertiary-fixed-dim": "#e7c365",
+                        "secondary-fixed": "#eaddff",
+                        "on-background": "#1a1c1c",
+                        "outline-variant": "#cbc4d2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#494551",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#4f378a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bg-atelier-gradient {
+            background: linear-gradient(145deg, #4f378a 0%, #6750a4 100%);
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed">
+<!-- Blurred Background Context (The Atelier Dashboard) -->
+<div class="fixed inset-0 z-0 overflow-hidden opacity-40 grayscale pointer-events-none">
+<div class="flex h-full">
+<!-- Sidebar Simulation -->
+<div class="w-64 bg-surface-container-low h-full p-6 flex flex-col gap-6">
+<div class="text-xl font-black tracking-tighter text-primary">Atelier Kanban</div>
+<div class="space-y-4">
+<div class="h-10 w-full bg-surface-container rounded-xl"></div>
+<div class="h-10 w-full bg-surface-container rounded-xl"></div>
+<div class="h-10 w-full bg-surface-container rounded-xl"></div>
+</div>
+</div>
+<!-- Content Simulation -->
+<div class="flex-1 p-8 grid grid-cols-3 gap-6">
+<div class="space-y-4">
+<div class="h-8 w-32 bg-surface-container-high rounded-lg mb-6"></div>
+<div class="h-48 bg-surface-container-lowest rounded-xl"></div>
+<div class="h-32 bg-surface-container-lowest rounded-xl"></div>
+</div>
+<div class="space-y-4">
+<div class="h-8 w-32 bg-surface-container-high rounded-lg mb-6"></div>
+<div class="h-32 bg-surface-container-lowest rounded-xl"></div>
+<div class="h-48 bg-surface-container-lowest rounded-xl"></div>
+</div>
+<div class="space-y-4">
+<div class="h-8 w-32 bg-surface-container-high rounded-lg mb-6"></div>
+<div class="h-40 bg-surface-container-lowest rounded-xl"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/20 backdrop-blur-md">
+<!-- Main Creation Dialog -->
+<main class="w-full max-w-2xl bg-surface-container-lowest rounded-[28px] overflow-hidden flex flex-col md:flex-row shadow-2xl ring-1 ring-black/5">
+<!-- Left Panel: Context/Visual -->
+<div class="w-full md:w-5/12 bg-surface-container-low p-8 flex flex-col justify-between relative overflow-hidden">
+<div class="relative z-10">
+<span class="inline-block px-3 py-1 bg-primary-fixed text-on-primary-fixed text-xs font-bold tracking-widest uppercase rounded-full mb-4">Workspace</span>
+<h1 class="text-3xl font-extrabold tracking-tight text-on-surface mb-2">New Task</h1>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                        Define a new unit of work for the <span class="font-bold">Creative Studio</span> project.
+                    </p>
+</div>
+<div class="relative z-10 mt-12">
+<div class="flex -space-x-3 mb-4">
+<img alt="" class="w-10 h-10 rounded-full border-4 border-surface-container-low object-cover" data-alt="portrait of a professional woman with a friendly smile in a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6N4FaD9HamMI45sTDehhjzLtWNDOIJTS1upxGfFZeFUtgvE1XuGmheBazlT3B92C9rTtGMS28c-n4H6Ezp9z_me4YFKbaZv92N_hZ1ikrz-PsFqwe4X17v267mFaB8VCVo7oognMFqzpoRgQugeK6yZLSozw02_z49wgVdWKODjTxShrn3BKgmIJS8sFzTO7yFRFzu797P1tdUPeYWsMcnGIc7SlPrlqP2pDGmivg9DfLgxyMRX02pFvN_RiTCqQfABux8FspCssJ"/>
+<img alt="" class="w-10 h-10 rounded-full border-4 border-surface-container-low object-cover" data-alt="portrait of a young man with glasses looking thoughtful in a creative workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACNv4lFIQE6I8GLW1s19_9sF4tsBwl5DZSK6R9Hrr_6Vp5ABidyg8KUCrXhwP_oRTfxZjEG8OhgUnWsMfwfPoQsYXjTlh5ic6JButo9hA_Nq74XkWaVj_W_Gyb1Cmggi30rjT_NbpnE3Cu3HIrHcyKz1xq-WpxsO4esVz44JBpggh4Orfo_5P8-zADL9PPACachsyraAmn3kJrqmtO12bZRz-IjScqPzpjHlAkkz34RnGyjxO4Z7kzT_1u02d8Nrnz3jTMrBJUlX0X"/>
+<div class="w-10 h-10 rounded-full border-4 border-surface-container-low bg-surface-variant flex items-center justify-center text-[10px] font-bold">+4</div>
+</div>
+<p class="text-[11px] text-on-surface-variant/70 uppercase font-black tracking-widest">Collaborators</p>
+</div>
+<!-- Abstract Shape Decoration -->
+<div class="absolute -bottom-12 -left-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+</div>
+<!-- Right Panel: Form Fields -->
+<div class="flex-1 p-8 md:p-10 bg-surface-container-lowest">
+<form class="space-y-6">
+<!-- Name Input -->
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant tracking-wider uppercase" for="task-name">Task Name</label>
+<input class="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline/50" id="task-name" placeholder="E.g., Design System Audit" type="text"/>
+</div>
+<!-- Description Input -->
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant tracking-wider uppercase" for="task-desc">Description</label>
+<textarea class="w-full bg-surface-container-high border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all text-on-surface placeholder:text-outline/50 resize-none" id="task-desc" placeholder="Briefly describe the objective..." rows="3"></textarea>
+</div>
+<!-- Board/Column Selection -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant tracking-wider uppercase">Board</label>
+<div class="relative group">
+<select class="w-full appearance-none bg-surface-container-high border-none rounded-xl px-4 py-3 text-sm font-semibold text-on-surface pr-10 focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+<option>Marketing</option>
+<option selected="">Creative Studio</option>
+<option>Development</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none group-hover:text-primary transition-colors" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant tracking-wider uppercase">Status</label>
+<div class="relative group">
+<select class="w-full appearance-none bg-surface-container-high border-none rounded-xl px-4 py-3 text-sm font-semibold text-on-surface pr-10 focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+<option selected="">To Do</option>
+<option>In Progress</option>
+<option>Review</option>
+<option>Done</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none group-hover:text-primary transition-colors" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Priority Toggle -->
+<div class="pt-2">
+<label class="text-xs font-bold text-on-surface-variant tracking-wider uppercase block mb-3">Priority Level</label>
+<div class="flex items-center gap-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high text-xs font-bold text-outline hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95" type="button">Low</button>
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high text-xs font-bold text-outline hover:bg-secondary-container hover:text-on-secondary-container transition-all active:scale-95" type="button">Medium</button>
+<button class="flex-1 py-2 rounded-lg bg-primary-fixed text-xs font-bold text-on-primary-fixed ring-2 ring-primary/20 active:scale-95" type="button">High</button>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-6 flex items-center justify-end gap-4">
+<button class="px-6 py-3 text-sm font-bold text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all" type="button">
+                            Cancel
+                        </button>
+<button class="bg-atelier-gradient px-8 py-3 rounded-xl text-on-primary font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 active:scale-98 transition-all flex items-center gap-2" type="submit">
+<span class="material-symbols-outlined text-lg" data-icon="add" data-weight="fill">add</span>
+                            Create Task
+                        </button>
+</div>
+</form>
+</div>
+</main>
+</div>
+<!-- Background Decoration -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+<div class="absolute top-[10%] right-[10%] w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[5%] left-[5%] w-[30rem] h-[30rem] bg-secondary/5 rounded-full blur-[100px]"></div>
+</div>
+</body></html>

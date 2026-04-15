@@ -1,10 +1,17 @@
 import { Show, UserButton } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
+  const user = await currentUser();
+  if (user) {
+    redirect("/my-boards");
+  }
+
   return (
-    <main className="mx-auto flex min-h-full max-w-lg flex-1 flex-col justify-center gap-8 p-8">
-      <div className="rounded-2xl bg-ds-surface-container-lowest p-8 shadow-[0_8px_32px_rgba(26,28,28,0.08)] ring-1 ring-ds-on-surface/[0.06] backdrop-blur-md">
+    <main className="mx-auto flex min-h-full max-w-lg flex-1 flex-col justify-center gap-8 p-8 transition-colors duration-300">
+      <div className="rounded-2xl bg-ds-surface-container-lowest p-8 shadow-[0_8px_32px_rgba(26,28,28,0.08)] ring-1 ring-ds-on-surface/[0.06] backdrop-blur-md transition-colors duration-300 dark:border dark:border-slate-700/50 dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)] dark:ring-slate-600/25">
         <div className="stitch-accent-bar mb-5 h-1 w-full max-w-xs rounded-full" aria-hidden />
         <h1 className="text-2xl font-bold tracking-tight text-ds-on-surface">
           Goodbye Bad Habits
@@ -27,7 +34,7 @@ export default async function Home() {
         </div>
       </Show>
       <Show when="signed-in">
-        <div className="flex flex-wrap items-center gap-4 rounded-xl bg-ds-surface-container-low p-4 shadow-sm ring-1 ring-ds-on-surface/[0.05] backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl bg-ds-surface-container-low p-4 shadow-sm ring-1 ring-ds-on-surface/[0.05] backdrop-blur-sm transition-colors duration-300 dark:border dark:border-slate-700/40 dark:ring-slate-600/20">
           <UserButton
             appearance={{
               elements: {
@@ -36,13 +43,7 @@ export default async function Home() {
             }}
           />
           <Link className="stitch-btn-primary px-4 py-2 text-xs font-bold uppercase tracking-widest" href="/my-boards">
-            My boards
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-xl border border-ds-outline-variant/35 px-4 py-2 text-xs font-bold uppercase tracking-widest text-ds-on-surface transition hover:border-ds-primary-container/35 hover:text-ds-primary"
-          >
-            Dashboard
+            All boards
           </Link>
         </div>
       </Show>

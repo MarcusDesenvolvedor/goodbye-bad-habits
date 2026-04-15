@@ -8,7 +8,7 @@ export default function SignInPage() {
       <p className="text-center text-xs font-bold uppercase tracking-[0.35em] text-ds-primary">
         Goodbye Bad Habits
       </p>
-      <SignIn appearance={clerkBauhausAppearance} />
+      <SignIn appearance={clerkBauhausAppearance} forceRedirectUrl="/my-boards" />
     </div>
   );
 }

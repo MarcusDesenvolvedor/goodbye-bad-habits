@@ -35,14 +35,15 @@ import {
   type KanbanTask,
   LIST_COLOR_PRESETS,
   TAG_PILL_CLASSES,
-} from "./board-kanban-mock";
+} from "./board-kanban-model";
 import { BOARD_SORTABLE_TRANSITION } from "./board-sortable-transition";
 
-/* ─── shared surface classes ─── */
+/* ─── Stitch Kanban card / column (HTML refs in docs/design/stitch-export/) ─── */
 
-const kanbanCardSurfaceClass = "stitch-kanban-card-surface p-3";
+const kanbanCardSurfaceClass =
+  "rounded-xl bg-ds-surface-container-lowest p-5 shadow-[0_1px_2px_rgba(26,28,28,0.06)] flex flex-col gap-4 transition-colors duration-300 dark:border dark:border-slate-700/50 dark:shadow-[0_1px_0_rgba(0,0,0,0.45)]";
 
-const kanbanCardInteractiveClass = `${kanbanCardSurfaceClass} transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(103,80,164,0.12)]`;
+const kanbanCardInteractiveClass = `${kanbanCardSurfaceClass} stitch-ambient-glow`;
 
 /* ─── card-menu / modal UI classes ─── */
 
@@ -55,13 +56,46 @@ const modalOverlayClass =
   "stitch-modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-200 ease-out";
 
 const modalPanelClass =
-  "max-h-[min(85vh,720px)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-ds-surface-container-lowest p-6 shadow-[0_24px_64px_rgba(26,28,28,0.12)] ring-1 ring-ds-on-surface/[0.06] transition-[opacity,transform] duration-200 ease-out";
+  "max-h-[min(85vh,720px)] w-full max-w-lg overflow-y-auto rounded-[28px] bg-ds-surface-container-lowest p-6 shadow-[0_24px_64px_rgba(26,28,28,0.12)] ring-1 ring-ds-on-surface/[0.06] transition-[opacity,transform,box-shadow,border-color] duration-200 ease-out dark:border dark:border-slate-700/50 dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)] dark:ring-slate-600/30";
+
+const taskDetailRootClass =
+  "fixed inset-0 z-[100] flex justify-end";
+
+const taskDetailBackdropClass =
+  "absolute inset-0 bg-ds-on-surface/10 backdrop-blur-sm transition-colors duration-300 dark:bg-slate-950/55";
+
+const taskDetailPanelClass =
+  "relative z-10 flex h-full max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-ds-surface-container-lowest shadow-2xl transition-colors duration-300 dark:border-l dark:border-slate-700/50 dark:shadow-[0_0_48px_rgba(0,0,0,0.5)]";
 
 const modalBtnPrimary =
   "stitch-btn-primary px-4 py-2 text-xs font-bold uppercase tracking-widest";
 
 const modalBtnSecondary =
   "stitch-btn-secondary px-4 py-2 text-xs font-bold uppercase tracking-widest";
+
+function CardCreatorAvatar({ task }: { task: KanbanTask }) {
+  const name = task.creatorName?.trim();
+  const alt = name || "Card author";
+  if (task.creatorImageUrl) {
+    return (
+      <img
+        src={task.creatorImageUrl}
+        alt={alt}
+        className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-ds-outline-variant/25"
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+  const initial = (name?.charAt(0) || "?").toUpperCase();
+  return (
+    <span
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-container-high text-[10px] font-bold text-ds-on-surface-variant ring-1 ring-ds-outline-variant/20"
+      aria-label={alt}
+    >
+      {initial}
+    </span>
+  );
+}
 
 /* ─── helpers ─── */
 
@@ -88,12 +122,31 @@ function MoreIcon({ className }: { className?: string }) {
   );
 }
 
+function AddCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8 12h8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════
    SortableCard — inline editing · 3-dot menu · modals
    ═══════════════════════════════════════════════════════════ */
 
 const SortableCard = memo(function SortableCard({
   task,
+  columnTitle,
   disabled,
   onRenameCard,
   onUpdateCard,
@@ -103,6 +156,7 @@ const SortableCard = memo(function SortableCard({
   onAddWorkspaceCustomLabel,
 }: {
   task: KanbanTask;
+  columnTitle: string;
   disabled: boolean;
   onRenameCard: (id: string, title: string) => void;
   onUpdateCard: (task: KanbanTask) => void;
@@ -262,20 +316,22 @@ const SortableCard = memo(function SortableCard({
 
   /* ── card content shared between drag-handle and editing mode ── */
 
-  const labelPreset = task.label?.kind === "preset" ? (
-    <div className="mb-2">
-      <CardLabelBadge label={task.label} />
-    </div>
-  ) : null;
+  const presetLabel =
+    task.label?.kind === "preset" ? (
+      <div className="mb-2">
+        <CardLabelBadge label={task.label} />
+      </div>
+    ) : null;
 
-  const labelCustom = task.label?.kind === "custom" ? (
-    <div className="mt-1.5">
-      <CardLabelBadge label={task.label} />
-    </div>
-  ) : null;
+  const customLabelAfterTitle =
+    task.label?.kind === "custom" ? (
+      <div className="mt-1.5">
+        <CardLabelBadge label={task.label} />
+      </div>
+    ) : null;
 
   const tagsList = task.tags.length > 0 ? (
-    <ul className="mt-2 flex flex-wrap gap-1.5">
+    <ul className="flex flex-wrap gap-1.5">
       {task.tags.map((tag, i) => (
         <li
           key={tag}
@@ -288,13 +344,14 @@ const SortableCard = memo(function SortableCard({
   ) : null;
 
   const dueLine = task.dueAt ? (
-    <p className="mt-2 text-[0.65rem] font-semibold uppercase tracking-widest text-ds-on-surface-variant">
-      Due{" "}
-      {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      })}
-    </p>
+    <div className="flex items-center gap-1.5 text-ds-on-surface-variant/80">
+      <span className="text-[10px] font-medium">
+        {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })}
+      </span>
+    </div>
   ) : null;
 
   /* ── render ── */
@@ -305,14 +362,13 @@ const SortableCard = memo(function SortableCard({
       style={style}
       className={
         isDragging
-          ? "animate-card-drop-slot pointer-events-none touch-none rounded-xl border border-dashed border-ds-primary-container/50 bg-ds-surface-container-lowest/90 p-3 shadow-[0_1px_3px_rgba(26,28,28,0.08)]"
+          ? "animate-card-drop-slot pointer-events-none flex min-h-[5rem] touch-none flex-col gap-4 rounded-xl border border-dashed border-ds-primary-container/50 bg-ds-surface-container-lowest/90 p-5 shadow-[0_1px_3px_rgba(26,28,28,0.08)] transition-colors duration-300 dark:border-slate-600/50 dark:shadow-[0_1px_0_rgba(0,0,0,0.45)]"
           : `group/card relative z-0 hover:z-10 ${kanbanCardInteractiveClass}`
       }
     >
       {isEditingTitle && !isDragging ? (
-        /* editing mode — no drag handle */
-        <div className="w-full">
-          {labelPreset}
+        <div className="flex w-full flex-col gap-4">
+          {presetLabel}
           <input
             ref={titleInputRef}
             value={editTitle}
@@ -334,29 +390,28 @@ const SortableCard = memo(function SortableCard({
               setEditTitle(task.title);
               setIsEditingTitle(false);
             }}
-            className="w-full bg-transparent text-sm font-bold tracking-wide text-ds-on-surface outline-none"
+            className="w-full bg-transparent text-base font-semibold tracking-tighter text-ds-on-surface outline-none"
             maxLength={120}
             aria-label="Edit card title"
           />
-          {labelCustom}
+          {customLabelAfterTitle}
           {tagsList}
           {dueLine}
         </div>
       ) : (
-        /* normal mode — drag handle */
         <button
           type="button"
           className={
             isDragging
               ? "invisible w-full"
-              : "w-full cursor-grab text-left active:cursor-grabbing"
+              : "flex w-full flex-col gap-4 text-left active:cursor-grabbing"
           }
           {...attributes}
           {...listeners}
         >
-          {labelPreset}
+          {presetLabel}
           <h3
-            className="cursor-text text-sm font-bold tracking-wide text-ds-on-surface"
+            className="cursor-text text-base font-semibold leading-snug tracking-tighter text-ds-on-surface"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -366,9 +421,12 @@ const SortableCard = memo(function SortableCard({
           >
             {task.title}
           </h3>
-          {labelCustom}
+          {customLabelAfterTitle}
           {tagsList}
-          {dueLine}
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="min-h-[1rem] min-w-0 flex-1">{dueLine}</div>
+            <CardCreatorAvatar task={task} />
+          </div>
         </button>
       )}
 
@@ -381,7 +439,7 @@ const SortableCard = memo(function SortableCard({
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             aria-label="Card actions"
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-ds-outline-variant/25 bg-ds-surface-container-high text-ds-on-surface-variant backdrop-blur-sm transition hover:bg-ds-surface-container hover:text-ds-on-surface"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-ds-outline-variant/20 bg-ds-surface-container-high text-ds-on-surface-variant transition hover:border-ds-primary/25 hover:bg-ds-secondary-container/40 hover:text-ds-primary active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -431,7 +489,7 @@ const SortableCard = memo(function SortableCard({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-xs font-semibold text-ds-error transition hover:bg-red-50"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold text-ds-error transition-colors duration-200 hover:bg-red-50 dark:hover:bg-red-950/35"
                 onClick={() => { onDeleteCard(task.id); closeMenu(); }}
               >
                 Delete Card
@@ -441,55 +499,152 @@ const SortableCard = memo(function SortableCard({
           )
         : null}
 
-      {/* ──── Open Card modal ──── */}
+      {/* ──── Task detail — Stitch slide-over (screen 4adda96c…) ──── */}
       {hydrated && openCardVisible
         ? createPortal(
-            <div className={modalOverlayClass} role="presentation" onClick={() => setOpenCardVisible(false)}>
-              <div role="dialog" aria-modal="true" className={modalPanelClass} onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-2xl font-extrabold tracking-tight text-ds-on-surface">{task.title}</h2>
-
-                <div className="mt-3 border-t border-ds-outline-variant/25 pt-3">
-                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">Description</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ds-on-surface-variant">
-                    {task.description.trim() ? task.description : "No description."}
-                  </p>
+            <div className={taskDetailRootClass} role="presentation">
+              <div
+                className={taskDetailBackdropClass}
+                aria-hidden
+                onClick={() => setOpenCardVisible(false)}
+              />
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Task details"
+                className={taskDetailPanelClass}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-6 py-5 md:px-8">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <button
+                      type="button"
+                      className="rounded-full p-2 text-ds-on-surface-variant transition hover:bg-ds-surface-container-low hover:text-ds-primary active:scale-95"
+                      aria-label="Close task details"
+                      onClick={() => setOpenCardVisible(false)}
+                    >
+                      <span className="sr-only">Close</span>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                    <span className="truncate text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                      {columnTitle}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {/* TODO: Re-implement logic — archive / complete task */}
+                    <button
+                      type="button"
+                      className="rounded-xl px-3 py-2 text-sm font-bold text-ds-on-surface-variant transition hover:bg-ds-surface-container-low hover:text-ds-primary active:scale-95"
+                    >
+                      Archive
+                    </button>
+                    <button
+                      type="button"
+                      className="stitch-btn-primary rounded-xl px-4 py-2 text-sm font-bold shadow-md"
+                    >
+                      Complete
+                    </button>
+                  </div>
                 </div>
 
-                {task.label ? (
-                  <div className="mt-3 border-t border-ds-outline-variant/25 pt-3">
-                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">Label</p>
-                    <div className="mt-1.5">
-                      <CardLabelBadge label={task.label} />
+                <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 md:px-12 md:py-8">
+                  <div className="mb-10">
+                    <h2 className="text-3xl font-black leading-tight tracking-tight text-ds-on-surface md:text-4xl">
+                      {task.title}
+                    </h2>
+                  </div>
+
+                  <div className="mb-12 grid grid-cols-1 gap-y-8 gap-x-10 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                        Assignee
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ds-primary-fixed text-[10px] font-black text-ds-on-primary-fixed">
+                          ?
+                        </span>
+                        <span className="text-sm font-semibold text-ds-on-surface-variant">Unassigned</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                        Due date
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-ds-primary" aria-hidden>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="4" y="5" width="16" height="15" rx="2" />
+                            <path d="M8 3v4M16 3v4M4 11h16" strokeLinecap="round" />
+                          </svg>
+                        </span>
+                        <span className="text-sm font-semibold text-ds-on-surface">
+                          {task.dueAt
+                            ? new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : "No due date"}
+                        </span>
+                      </div>
+                    </div>
+                    {task.label ? (
+                      <div className="flex flex-col gap-2 sm:col-span-2">
+                        <span className="text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                          Label
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          <CardLabelBadge label={task.label} />
+                        </div>
+                      </div>
+                    ) : null}
+                    {task.tags.length > 0 ? (
+                      <div className="flex flex-col gap-2 sm:col-span-2">
+                        <span className="text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                          Tags
+                        </span>
+                        <ul className="flex flex-wrap gap-2">
+                          {task.tags.map((tag, i) => (
+                            <li
+                              key={tag}
+                              className={`rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${TAG_PILL_CLASSES[i % TAG_PILL_CLASSES.length]}`}
+                            >
+                              {tag}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="mb-12">
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                      Description
+                    </h3>
+                    <div className="rounded-2xl bg-ds-surface-container-low p-5 md:p-6">
+                      <p className="font-medium leading-relaxed text-ds-on-surface">
+                        {task.description.trim() ? task.description : "No description yet."}
+                      </p>
                     </div>
                   </div>
-                ) : null}
 
-                {task.tags.length > 0 ? (
-                  <div className="mt-3 border-t border-ds-outline-variant/25 pt-3">
-                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">Tags</p>
-                    <ul className="mt-2 flex flex-wrap gap-1.5">
-                      {task.tags.map((tag, i) => (
-                        <li key={tag} className={`rounded-full px-2.5 py-0.5 ${TAG_PILL_CLASSES[i % TAG_PILL_CLASSES.length]}`}>
-                          {tag}
-                        </li>
-                      ))}
-                    </ul>
+                  {/* TODO: Re-implement logic — subtasks from API / card model (Stitch checklist) */}
+                  <div className="mb-12 opacity-60">
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                      Subtasks
+                    </h3>
+                    <p className="text-sm text-ds-on-surface-variant">Not wired to data in this build.</p>
                   </div>
-                ) : null}
 
-                {task.dueAt ? (
-                  <div className="mt-3 border-t border-ds-outline-variant/25 pt-3">
-                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-ds-on-surface-variant">Due date</p>
-                    <p className="mt-1 text-sm text-ds-on-surface-variant">
-                      {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
-                    </p>
+                  {/* TODO: Re-implement logic — comments & activity feed */}
+                  <div className="mb-8 opacity-60">
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                      Activity
+                    </h3>
+                    <p className="text-sm text-ds-on-surface-variant">Activity stream not connected.</p>
                   </div>
-                ) : null}
-
-                <div className="mt-5 flex justify-end border-t border-ds-outline-variant/25 pt-4">
-                  <button type="button" className={modalBtnSecondary} onClick={() => setOpenCardVisible(false)}>
-                    Close
-                  </button>
                 </div>
               </div>
             </div>,
@@ -645,26 +800,39 @@ const SortableCard = memo(function SortableCard({
    ═══════════════════════════════════════════════════════════ */
 
 export function CardPreview({ task }: { task: KanbanTask }) {
+  const preset =
+    task.label?.kind === "preset" ? (
+      <div className="mb-2">
+        <CardLabelBadge label={task.label} />
+      </div>
+    ) : null;
+  const custom =
+    task.label?.kind === "custom" ? (
+      <div className="mt-1.5">
+        <CardLabelBadge label={task.label} />
+      </div>
+    ) : null;
+  const due =
+    task.dueAt != null ? (
+      <div className="flex items-center gap-1.5 text-ds-on-surface-variant/80">
+        <span className="text-[10px] font-medium">
+          {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+      </div>
+    ) : null;
   return (
     <article
-      className={`pointer-events-none w-[min(100vw-3rem,254px)] opacity-[0.65] ${kanbanCardSurfaceClass}`}
+      className={`pointer-events-none w-[min(100vw-3rem,280px)] opacity-[0.72] ${kanbanCardSurfaceClass}`}
     >
-      <div className="w-full cursor-grab text-left active:cursor-grabbing">
-        {task.label?.kind === "preset" ? (
-          <div className="mb-2">
-            <CardLabelBadge label={task.label} />
-          </div>
-        ) : null}
-        <h3 className="text-sm font-bold tracking-wide text-ds-on-surface">
-          {task.title}
-        </h3>
-        {task.label?.kind === "custom" ? (
-          <div className="mt-1.5">
-            <CardLabelBadge label={task.label} />
-          </div>
-        ) : null}
+      <div className="flex w-full flex-col gap-4 text-left">
+        {preset}
+        <h3 className="text-base font-semibold leading-snug tracking-tighter text-ds-on-surface">{task.title}</h3>
+        {custom}
         {task.tags.length > 0 ? (
-          <ul className="mt-2 flex flex-wrap gap-1.5">
+          <ul className="flex flex-wrap gap-1.5">
             {task.tags.map((tag, i) => (
               <li
                 key={tag}
@@ -675,15 +843,10 @@ export function CardPreview({ task }: { task: KanbanTask }) {
             ))}
           </ul>
         ) : null}
-        {task.dueAt ? (
-          <p className="mt-2 text-[0.65rem] font-semibold uppercase tracking-widest text-ds-on-surface-variant">
-            Due{" "}
-            {new Date(`${task.dueAt}T12:00:00`).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-            })}
-          </p>
-        ) : null}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="min-h-[1rem] min-w-0 flex-1">{due}</div>
+          <CardCreatorAvatar task={task} />
+        </div>
       </div>
     </article>
   );
@@ -691,28 +854,23 @@ export function CardPreview({ task }: { task: KanbanTask }) {
 
 export function ColumnDragPreview({
   title,
-  meta,
   taskCount,
 }: {
   title: string;
-  meta: ColumnMeta;
   taskCount: number;
 }) {
   return (
     <div
-      className={`pointer-events-none w-[min(100vw-3rem,280px)] opacity-[0.7] ${meta.columnShellClass}`}
+      className="pointer-events-none flex w-[min(100vw-3rem,280px)] flex-col gap-2 rounded-xl bg-ds-primary-fixed/50 px-2 py-3 opacity-[0.85] ring-2 ring-ds-primary-container/35"
     >
-      <div className={`h-1 w-full shrink-0 ${meta.accentBarClass}`} aria-hidden />
-      <div className="border-b border-ds-outline-variant/25 px-3 py-2">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-ds-on-surface">
-          {title}
+      <div className="flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-ds-primary">
+          <span>{title}</span>
+          <span className="rounded-full bg-ds-primary-fixed px-2 py-0.5 text-[10px] font-bold text-ds-on-primary-fixed-variant tabular-nums">
+            {taskCount}
+          </span>
         </h2>
-        <p className="text-[0.65rem] uppercase tracking-wide text-ds-on-surface-variant">
-          {taskCount} {taskCount === 1 ? "card" : "cards"}
-        </p>
-      </div>
-      <div className="flex min-h-[60px] items-center justify-center p-3 text-[0.65rem] font-bold uppercase tracking-wide text-ds-on-surface-variant">
-        {taskCount} {taskCount === 1 ? "card" : "cards"}
+        <MoreIcon className="text-ds-on-surface-variant/70" />
       </div>
     </div>
   );
@@ -726,9 +884,6 @@ const COLUMN_SORTABLE_TRANSITION = {
   duration: 150,
   easing: "cubic-bezier(0.25, 1, 0.45, 1)",
 } as const;
-
-const kanbanColumnDropHintClass =
-  "flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-ds-outline-variant/45 p-3 text-center text-[0.65rem] font-bold uppercase tracking-wide text-ds-on-surface-variant";
 
 const KanbanColumn = memo(function KanbanColumn({
   columnId,
@@ -746,7 +901,6 @@ const KanbanColumn = memo(function KanbanColumn({
   onAddWorkspaceCustomLabel,
   dropIndicatorIndex,
   dropSlotMinHeightPx,
-  isColumnDragActive,
 }: {
   columnId: KanbanColumnId;
   tasks: KanbanTask[];
@@ -763,7 +917,6 @@ const KanbanColumn = memo(function KanbanColumn({
   onAddWorkspaceCustomLabel: (label: WorkspaceCustomLabel) => void;
   dropIndicatorIndex: number | null;
   dropSlotMinHeightPx?: number | null;
-  isColumnDragActive?: boolean;
 }) {
   const {
     attributes,
@@ -802,7 +955,7 @@ const KanbanColumn = memo(function KanbanColumn({
     const trimmed = title.trim();
     if (!trimmed) return;
     onAddCard(columnId, {
-      id: `mock-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       title: trimmed,
       description: "",
       tags: [],
@@ -830,47 +983,29 @@ const KanbanColumn = memo(function KanbanColumn({
     <div
       ref={setNodeRef}
       style={columnStyle}
-      className={`flex w-[min(100%,280px)] shrink-0 flex-col overflow-hidden ${
+      className={
         isColumnDragging
-          ? "animate-card-drop-slot rounded-xl border-2 border-dashed border-ds-primary-container/45 bg-ds-primary-fixed/40 backdrop-blur-sm"
-          : `${meta.columnShellClass} ${
+          ? "flex w-[min(100%,280px)] shrink-0 animate-card-drop-slot flex-col overflow-hidden rounded-xl border-2 border-dashed border-ds-primary-container/45 bg-ds-primary-fixed/40 backdrop-blur-sm transition-colors duration-300 dark:border-slate-600/55"
+          : `${meta.columnShellClass} overflow-visible transition-colors duration-300 ${
               isSelected
-                ? "ring-2 ring-ds-primary-container/35 ring-offset-2 ring-offset-ds-surface-container-low"
+                ? "rounded-xl ring-2 ring-ds-primary-container/30 ring-offset-2 ring-offset-ds-surface-container-low dark:ring-offset-slate-950"
                 : ""
             }`
-      }`}
+      }
     >
-      <div className={`h-1 w-full shrink-0 ${meta.accentBarClass} ${isColumnDragging ? "opacity-30" : ""}`} aria-hidden />
-
       <div
-        className={`flex items-center gap-1 px-3 py-2 ${
-          isColumnDragging
-            ? "invisible border-b border-transparent"
-            : "cursor-grab touch-none border-b border-transparent pb-2 active:cursor-grabbing"
+        className={`flex items-center justify-between px-2 ${
+          isColumnDragging ? "invisible" : "cursor-grab touch-none active:cursor-grabbing"
         }`}
         {...attributes}
         {...listeners}
       >
-        <svg
-          className="h-4 w-4 shrink-0 text-ds-on-surface-variant"
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          aria-hidden
-        >
-          <circle cx="5" cy="3" r="1.2" />
-          <circle cx="11" cy="3" r="1.2" />
-          <circle cx="5" cy="8" r="1.2" />
-          <circle cx="11" cy="8" r="1.2" />
-          <circle cx="5" cy="13" r="1.2" />
-          <circle cx="11" cy="13" r="1.2" />
-        </svg>
-
         <div
           role="button"
           tabIndex={0}
           aria-pressed={isSelected}
           aria-label={`${meta.title} column. ${isSelected ? "Selected for inbox copy." : "Select for inbox copy."}`}
-          className="min-w-0 flex-1 cursor-pointer outline-none transition hover:bg-ds-surface-container-high/50 focus-visible:ring-2 focus-visible:ring-[color:var(--stitch-focus-ring)]"
+          className="min-w-0 flex-1 cursor-pointer outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color:var(--stitch-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-ds-surface-container-low"
           onClick={() => {
             if (!isEditingTitle) onSelectColumn(columnId);
           }}
@@ -905,7 +1040,7 @@ const KanbanColumn = memo(function KanbanColumn({
                 setEditTitle(meta.title);
                 setIsEditingTitle(false);
               }}
-              className="w-full bg-transparent text-xs font-bold uppercase tracking-widest text-ds-on-surface outline-none"
+              className="w-full bg-transparent text-sm font-black uppercase tracking-widest text-ds-primary outline-none"
               maxLength={60}
               aria-label="Edit column title"
               onClick={(e) => e.stopPropagation()}
@@ -934,21 +1069,33 @@ const KanbanColumn = memo(function KanbanColumn({
             </span>
           ) : null}
         </div>
+        <button
+          type="button"
+          className="shrink-0 rounded-lg p-1 text-ds-on-surface-variant/70 transition hover:bg-ds-surface-container-low hover:text-ds-primary active:scale-95"
+          aria-label="Column menu"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        >
+          <MoreIcon />
+        </button>
       </div>
 
-      <div className={`flex flex-col gap-3 overflow-y-auto p-3 pb-6 ${isColumnDragging ? "invisible" : ""}`}>
+      <div
+        className={`ds-scroll-thin flex max-h-[min(70vh,720px)] min-h-0 flex-col gap-4 overflow-x-hidden overflow-y-auto pr-0.5 ${isColumnDragging ? "invisible" : ""}`}
+      >
         <SortableContext
           items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
+          <div className={columnId === "done" ? "flex flex-col gap-4 opacity-70" : "flex flex-col gap-4"}>
           {tasks.length === 0 ? (
             <>
               {dropIndicatorIndex === 0 ? (
                 <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
               ) : null}
-              <div className={kanbanColumnDropHintClass} aria-hidden>
-                Drop cards here
-              </div>
             </>
           ) : (
             <>
@@ -958,6 +1105,7 @@ const KanbanColumn = memo(function KanbanColumn({
                     <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
                   ) : null}
                   <SortableCard
+                    columnTitle={meta.title}
                     task={task}
                     disabled={false}
                     onRenameCard={(id, newTitle) => onRenameCard(columnId, id, newTitle)}
@@ -972,33 +1120,32 @@ const KanbanColumn = memo(function KanbanColumn({
               {dropIndicatorIndex === tasks.length ? (
                 <BoardCardDropSlot minHeightPx={dropSlotMinHeightPx} />
               ) : null}
-              <div className={kanbanColumnDropHintClass} aria-hidden>
-                Drop cards here
-              </div>
             </>
           )}
+          </div>
         </SortableContext>
 
-        <div className="pt-3">
+        <div className="pt-1">
           {!showForm ? (
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ds-outline-variant/35 py-6 text-[10px] font-bold uppercase tracking-widest text-ds-on-surface-variant transition-all hover:border-ds-primary-container/35 hover:text-ds-primary"
+              className="group flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ds-outline-variant/40 py-6 text-ds-on-surface-variant transition-all hover:border-ds-primary/30 hover:text-ds-primary active:scale-[0.99]"
             >
-              + Add card
+              <AddCircleIcon className="transition-transform group-hover:scale-110" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Add another task</span>
             </button>
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="rounded-xl border-0 bg-ds-surface-container-high p-4 shadow-sm ring-1 ring-ds-on-surface/[0.04]"
+              className="rounded-xl bg-ds-surface-container-high p-4 shadow-[0_1px_2px_rgba(26,28,28,0.06)] transition-colors duration-300 dark:border dark:border-slate-700/45 dark:shadow-[0_1px_0_rgba(0,0,0,0.35)]"
             >
               <input
                 autoFocus
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Card title…"
-                className="w-full rounded-xl border-0 bg-ds-surface-container-lowest px-3 py-2 text-sm font-semibold tracking-tight text-ds-on-surface outline-none ring-0 placeholder:text-ds-on-surface-variant focus:ring-2 focus:ring-ds-primary-container/25"
+                className="w-full rounded-xl border-0 bg-ds-surface-container-lowest px-4 py-3 text-sm font-semibold tracking-tight text-ds-on-surface outline-none ring-0 transition-all placeholder:text-ds-on-surface-variant/60 focus:bg-ds-surface-container-lowest focus:ring-2 focus:ring-ds-primary/20"
                 maxLength={120}
                 aria-label="Card title"
                 onKeyDown={(e) => {
@@ -1050,15 +1197,16 @@ function AddListButton({
       <button
         type="button"
         onClick={() => setShowForm(true)}
-        className="flex w-[min(100%,280px)] shrink-0 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-ds-outline-variant/35 bg-ds-surface-container-lowest/60 px-6 py-4 text-sm font-bold uppercase tracking-widest text-ds-on-surface-variant backdrop-blur-md transition-all duration-200 hover:border-ds-primary-container/35 hover:bg-ds-surface-container-lowest hover:text-ds-primary hover:shadow-[0_8px_24px_rgba(103,80,164,0.1)]"
+        className="group flex w-[min(100%,280px)] shrink-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ds-outline-variant/40 py-8 text-ds-on-surface-variant transition-all hover:border-ds-primary/30 hover:text-ds-primary active:scale-[0.99]"
       >
-        + Add list
+        <AddCircleIcon className="transition-transform group-hover:scale-110" />
+        <span className="text-[10px] font-bold uppercase tracking-widest">Add list</span>
       </button>
     );
   }
 
   return (
-    <div className="flex w-[min(100%,280px)] shrink-0 flex-col rounded-[28px] bg-ds-surface-container-lowest p-4 shadow-[0_16px_48px_rgba(26,28,28,0.08)] ring-1 ring-ds-on-surface/[0.06] backdrop-blur-md">
+    <div className="flex w-[min(100%,280px)] shrink-0 flex-col rounded-[28px] bg-ds-surface-container-lowest p-4 shadow-[0_16px_48px_rgba(26,28,28,0.08)] ring-1 ring-ds-on-surface/[0.06] backdrop-blur-md transition-colors duration-300 dark:border dark:border-slate-700/50 dark:shadow-[0_12px_36px_rgba(0,0,0,0.45)] dark:ring-slate-600/25">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           autoFocus
@@ -1140,7 +1288,6 @@ export function KanbanBoardSection({
   onAddWorkspaceCustomLabel,
   columnDropIndicators,
   dropSlotMinHeightPx,
-  isColumnDragActive,
 }: {
   columns: ColumnTasks;
   columnOrder: string[];
@@ -1158,25 +1305,15 @@ export function KanbanBoardSection({
   onAddWorkspaceCustomLabel: (label: WorkspaceCustomLabel) => void;
   columnDropIndicators: Record<string, number | null>;
   dropSlotMinHeightPx?: number | null;
-  isColumnDragActive?: boolean;
 }) {
   return (
-    <section className="stitch-glass-panel rounded-2xl p-6">
-      <div className="mb-6 flex flex-col gap-3 border-b border-ds-outline-variant/25 pb-4">
-        <div
-          className="stitch-accent-bar h-1 w-36 rounded-full"
-          aria-hidden
-        />
-        <h2 className="text-lg font-bold uppercase tracking-widest text-ds-on-surface">
-          Kanban
-        </h2>
-        <p className="text-xs uppercase tracking-wide text-ds-on-surface-variant">
-          Drag from Inbox or between columns · reorder within a column · drag
-          the header to reorder lists
-        </p>
-      </div>
+    <section className="min-w-0 transition-colors duration-300">
+      <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-ds-on-surface-variant/80 dark:text-slate-400">
+        Drag from Inbox or between columns · reorder within a column · drag the column header to
+        reorder lists
+      </p>
 
-      <div className="-mx-1 flex items-start gap-4 overflow-x-auto overflow-y-visible pb-2 pt-1">
+      <div className="-mx-1 flex items-start gap-8 overflow-x-auto overflow-y-visible pb-2 pt-1 ds-scroll-thin">
         <SortableContext
           items={columnOrder}
           strategy={horizontalListSortingStrategy}
@@ -1189,9 +1326,9 @@ export function KanbanBoardSection({
               meta={
                 columnMeta[columnId] ?? {
                   title: columnId,
-                  accentBarClass: "h-1 w-full shrink-0 opacity-0",
+                  accentBarClass: "",
                   columnShellClass:
-                    "rounded-xl bg-ds-surface-container-low shadow-[0_1px_3px_rgba(26,28,28,0.06)]",
+                    "flex w-[min(100%,280px)] shrink-0 min-h-0 flex-col gap-6",
                 }
               }
               onAddCard={onAddCard}
@@ -1206,7 +1343,6 @@ export function KanbanBoardSection({
               onAddWorkspaceCustomLabel={onAddWorkspaceCustomLabel}
               dropIndicatorIndex={columnDropIndicators[columnId] ?? null}
               dropSlotMinHeightPx={dropSlotMinHeightPx}
-              isColumnDragActive={isColumnDragActive}
             />
           ))}
         </SortableContext>
