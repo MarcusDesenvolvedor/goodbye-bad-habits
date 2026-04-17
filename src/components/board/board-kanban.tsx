@@ -73,30 +73,6 @@ const modalBtnPrimary =
 const modalBtnSecondary =
   "stitch-btn-secondary px-4 py-2 text-xs font-bold uppercase tracking-widest";
 
-function CardCreatorAvatar({ task }: { task: KanbanTask }) {
-  const name = task.creatorName?.trim();
-  const alt = name || "Card author";
-  if (task.creatorImageUrl) {
-    return (
-      <img
-        src={task.creatorImageUrl}
-        alt={alt}
-        className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-ds-outline-variant/25"
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-  const initial = (name?.charAt(0) || "?").toUpperCase();
-  return (
-    <span
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-container-high text-[10px] font-bold text-ds-on-surface-variant ring-1 ring-ds-outline-variant/20"
-      aria-label={alt}
-    >
-      {initial}
-    </span>
-  );
-}
-
 /* ─── helpers ─── */
 
 function useHydrated() {
@@ -122,6 +98,25 @@ function MoreIcon({ className }: { className?: string }) {
   );
 }
 
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+  );
+}
+
 function AddCircleIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -141,7 +136,7 @@ function AddCircleIcon({ className }: { className?: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SortableCard — inline editing · 3-dot menu · modals
+   SortableCard — title edit · card menu · modals
    ═══════════════════════════════════════════════════════════ */
 
 const SortableCard = memo(function SortableCard({
@@ -205,7 +200,7 @@ const SortableCard = memo(function SortableCard({
     setIsEditingTitle(false);
   }
 
-  /* ── 3-dot menu ── */
+  /* ── card actions menu ── */
   const [menuOpen, setMenuOpen] = useState(false);
   const [openCardVisible, setOpenCardVisible] = useState(false);
   const [labelsVisible, setLabelsVisible] = useState(false);
@@ -359,12 +354,25 @@ const SortableCard = memo(function SortableCard({
   return (
     <article
       ref={setNodeRef}
+      data-kanban-card
       style={style}
       className={
         isDragging
           ? "animate-card-drop-slot pointer-events-none flex min-h-[5rem] touch-none flex-col gap-4 rounded-xl border border-dashed border-ds-primary-container/50 bg-ds-surface-container-lowest/90 p-5 shadow-[0_1px_3px_rgba(26,28,28,0.08)] transition-colors duration-300 dark:border-slate-600/50 dark:shadow-[0_1px_0_rgba(0,0,0,0.45)]"
-          : `group/card relative z-0 hover:z-10 ${kanbanCardInteractiveClass}`
+          : `group/card relative z-0 hover:z-[5] ${kanbanCardInteractiveClass}`
       }
+      onClick={(e) => {
+        if (isDragging || isEditingTitle) return;
+        const el = e.target as HTMLElement | null;
+        if (!el) return;
+        if (
+          el.closest("[data-kanban-card-menu]") ||
+          el.closest("[data-kanban-card-title-edit]")
+        ) {
+          return;
+        }
+        setOpenCardVisible(true);
+      }}
     >
       {isEditingTitle && !isDragging ? (
         <div className="flex w-full flex-col gap-4">
@@ -399,8 +407,7 @@ const SortableCard = memo(function SortableCard({
           {dueLine}
         </div>
       ) : (
-        <button
-          type="button"
+        <div
           className={
             isDragging
               ? "invisible w-full"
@@ -410,35 +417,40 @@ const SortableCard = memo(function SortableCard({
           {...listeners}
         >
           {presetLabel}
-          <h3
-            className="cursor-text text-base font-semibold leading-snug tracking-tighter text-ds-on-surface"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setEditTitle(task.title);
-              setIsEditingTitle(true);
-            }}
-          >
-            {task.title}
+          <h3 className="m-0 inline min-w-0 text-base font-semibold leading-snug tracking-tighter text-ds-on-surface">
+            <button
+              type="button"
+              data-kanban-card-title-edit
+              className="inline-block w-fit max-w-full cursor-text rounded-sm border-0 bg-transparent p-0 text-left font-semibold tracking-tighter text-ds-on-surface outline-none transition hover:text-ds-primary focus-visible:ring-2 focus-visible:ring-ds-primary-container/35 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-surface-container-lowest"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setEditTitle(task.title);
+                setIsEditingTitle(true);
+              }}
+            >
+              {task.title}
+            </button>
           </h3>
           {customLabelAfterTitle}
           {tagsList}
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="min-h-[1rem] min-w-0 flex-1">{dueLine}</div>
-            <CardCreatorAvatar task={task} />
-          </div>
-        </button>
+          {dueLine ? <div className="mt-2 min-h-[1rem] min-w-0">{dueLine}</div> : null}
+        </div>
       )}
 
-      {/* ··· menu trigger */}
+      {/* card actions trigger */}
       {!isDragging ? (
-        <div className="absolute right-2 top-2 flex opacity-0 transition-opacity duration-150 group-hover/card:opacity-100">
+        <div
+          data-kanban-card-menu
+          className="absolute right-2 top-2 flex opacity-0 transition-opacity duration-150 group-hover/card:opacity-100"
+        >
           <button
             ref={menuTriggerRef}
             type="button"
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            aria-label="Card actions"
+            aria-label="Card options"
             className="flex h-7 w-7 items-center justify-center rounded-md border border-ds-outline-variant/20 bg-ds-surface-container-high text-ds-on-surface-variant transition hover:border-ds-primary/25 hover:bg-ds-secondary-container/40 hover:text-ds-primary active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
@@ -448,7 +460,7 @@ const SortableCard = memo(function SortableCard({
             }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <MoreIcon />
+            <PencilIcon />
           </button>
         </div>
       ) : null}
@@ -843,10 +855,7 @@ export function CardPreview({ task }: { task: KanbanTask }) {
             ))}
           </ul>
         ) : null}
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="min-h-[1rem] min-w-0 flex-1">{due}</div>
-          <CardCreatorAvatar task={task} />
-        </div>
+        {due ? <div className="mt-2 min-h-[1rem] min-w-0">{due}</div> : null}
       </div>
     </article>
   );
@@ -986,7 +995,7 @@ const KanbanColumn = memo(function KanbanColumn({
       className={
         isColumnDragging
           ? "flex w-[min(100%,280px)] shrink-0 animate-card-drop-slot flex-col overflow-hidden rounded-xl border-2 border-dashed border-ds-primary-container/45 bg-ds-primary-fixed/40 backdrop-blur-sm transition-colors duration-300 dark:border-slate-600/55"
-          : `${meta.columnShellClass} overflow-visible transition-colors duration-300 ${
+          : `${meta.columnShellClass} relative z-0 overflow-visible transition-colors duration-300 has-[[data-kanban-card]:hover]:z-20 ${
               isSelected
                 ? "rounded-xl ring-2 ring-ds-primary-container/30 ring-offset-2 ring-offset-ds-surface-container-low dark:ring-offset-slate-950"
                 : ""

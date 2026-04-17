@@ -127,7 +127,21 @@ export function DashboardBoardsPanel() {
         </p>
       ) : null}
       {boards === null ? (
-        <p className="text-sm text-ds-on-surface-variant">Loading boards…</p>
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-busy aria-label="Loading boards">
+          {Array.from({ length: 6 }, (_, i) => (
+            <li
+              key={i}
+              className="flex flex-col overflow-hidden rounded-2xl border border-ds-outline-variant/10 bg-ds-surface-container-lowest/80 p-5 shadow-[0_1px_3px_rgba(26,28,28,0.06)] dark:border-slate-700/40"
+            >
+              <div className="h-4 w-3/5 animate-pulse rounded-[12px] bg-slate-100 dark:bg-slate-800" />
+              <div className="mt-4 h-3 w-2/5 animate-pulse rounded-[12px] bg-slate-100 dark:bg-slate-800" />
+              <div className="mt-8 flex gap-2 border-t border-ds-outline-variant/10 pt-4">
+                <div className="h-8 flex-1 animate-pulse rounded-[12px] bg-slate-100 dark:bg-slate-800" />
+                <div className="h-8 w-16 animate-pulse rounded-[12px] bg-slate-100 dark:bg-slate-800" />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : boards.length === 0 ? (
         <p className="text-sm text-ds-on-surface-variant">No boards yet — create one above.</p>
       ) : (
