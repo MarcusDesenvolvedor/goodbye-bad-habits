@@ -136,6 +136,7 @@ function workspaceToUiState(workspace: BoardWorkspaceJson) {
     id: c.id,
     title: c.title,
     description: c.description ?? "",
+    createdAt: c.createdAt,
   }));
   for (const listId of columnOrder) {
     columns[listId] = (cardsByList.get(listId) ?? []).map((c) => ({
@@ -144,6 +145,7 @@ function workspaceToUiState(workspace: BoardWorkspaceJson) {
       description: c.description ?? "",
       tags: [] as string[],
       dueAt: c.dueAt ? c.dueAt.slice(0, 10) : undefined,
+      createdAt: c.createdAt,
     }));
   }
   return {
@@ -345,6 +347,7 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
     comments?: string[];
     tags: string[];
     dueAt?: string;
+    createdAt?: string;
   } | null>(null);
 
   const activeId = dndPointer.activeId;
@@ -431,6 +434,7 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
         comments: inboxT?.comments,
         tags: kanbanT?.tags ?? [],
         dueAt: kanbanT?.dueAt,
+        createdAt: inboxT?.createdAt ?? kanbanT?.createdAt,
       };
 
       setDragSlotMinHeightPx(readActiveCardHeightPx(event.active));
@@ -505,6 +509,7 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
         tags: dragTask.tags,
         label: dragTask.label,
         dueAt: dragTask.dueAt,
+        createdAt: dragTask.createdAt ?? new Date().toISOString(),
         creatorImageUrl: dc.creatorImageUrl,
         creatorName: dc.creatorName,
       };
@@ -632,6 +637,7 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
       const dc = defaultCardCreatorRef.current;
       const enriched: KanbanTask = {
         ...task,
+        createdAt: task.createdAt ?? new Date().toISOString(),
         creatorImageUrl: task.creatorImageUrl ?? dc.creatorImageUrl,
         creatorName: task.creatorName ?? dc.creatorName,
       };
@@ -702,7 +708,11 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
 
   const handleDuplicateKanbanCard = useCallback(
     (columnId: KanbanColumnId, task: KanbanTask) => {
-      const copy: KanbanTask = { ...task, id: crypto.randomUUID() };
+      const copy: KanbanTask = {
+        ...task,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      };
       setColumns((prev) => ({
         ...prev,
         [columnId]: [...(prev[columnId] ?? []), copy],
@@ -735,6 +745,7 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
         tags: [],
         label: task.label,
         dueAt: undefined,
+        createdAt: task.createdAt ?? new Date().toISOString(),
         creatorImageUrl: dc.creatorImageUrl,
         creatorName: dc.creatorName,
       };
@@ -750,6 +761,7 @@ export function BoardWorkspace({ workspace, onPersist }: BoardWorkspaceProps) {
     const copy: InboxTask = {
       ...task,
       id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
       comments: task.comments?.length ? [...task.comments] : undefined,
     };
     setInboxTasks((prev) => [...prev, copy]);

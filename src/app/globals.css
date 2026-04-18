@@ -160,15 +160,13 @@ body {
 .stitch-ambient-glow {
   transition:
     box-shadow 0.2s ease-in-out,
-    transform 0.2s ease-in-out,
     border-color 0.2s ease-in-out;
 }
 .stitch-ambient-glow:hover {
   box-shadow: 0 8px 24px rgba(103, 80, 164, 0.08);
-  transform: scale(1.02);
 }
 .stitch-ambient-glow:active {
-  transform: scale(0.98);
+  box-shadow: 0 4px 14px rgba(103, 80, 164, 0.06);
 }
 
 html.dark .stitch-ambient-glow:hover {

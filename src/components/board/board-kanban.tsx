@@ -83,6 +83,13 @@ function useHydrated() {
   );
 }
 
+function formatCardCreatedAtForDetail(iso?: string): string {
+  if (!iso?.trim()) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
 function MoreIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -142,6 +149,7 @@ function AddCircleIcon({ className }: { className?: string }) {
 const SortableCard = memo(function SortableCard({
   task,
   columnTitle,
+  isDoneColumn,
   disabled,
   onRenameCard,
   onUpdateCard,
@@ -152,6 +160,8 @@ const SortableCard = memo(function SortableCard({
 }: {
   task: KanbanTask;
   columnTitle: string;
+  /** List titled "Done" — cards here are treated as completed. */
+  isDoneColumn: boolean;
   disabled: boolean;
   onRenameCard: (id: string, title: string) => void;
   onUpdateCard: (task: KanbanTask) => void;
@@ -359,7 +369,7 @@ const SortableCard = memo(function SortableCard({
       className={
         isDragging
           ? "animate-card-drop-slot pointer-events-none flex min-h-[5rem] touch-none flex-col gap-4 rounded-xl border border-dashed border-ds-primary-container/50 bg-ds-surface-container-lowest/90 p-5 shadow-[0_1px_3px_rgba(26,28,28,0.08)] transition-colors duration-300 dark:border-slate-600/50 dark:shadow-[0_1px_0_rgba(0,0,0,0.45)]"
-          : `group/card relative z-0 hover:z-[5] ${kanbanCardInteractiveClass}`
+          : `group/card relative ${kanbanCardInteractiveClass}`
       }
       onClick={(e) => {
         if (isDragging || isEditingTitle) return;
@@ -374,6 +384,13 @@ const SortableCard = memo(function SortableCard({
         setOpenCardVisible(true);
       }}
     >
+      {!isDragging && isDoneColumn ? (
+        <span
+          className="pointer-events-none absolute left-4 top-4 z-[1] h-2.5 w-2.5 rounded-full bg-emerald-500 opacity-0 shadow-sm ring-2 ring-ds-surface-container-lowest transition-opacity duration-200 group-hover/card:opacity-100 dark:ring-slate-900"
+          aria-hidden
+          title="Concluída"
+        />
+      ) : null}
       {isEditingTitle && !isDragging ? (
         <div className="flex w-full flex-col gap-4">
           {presetLabel}
@@ -601,6 +618,14 @@ const SortableCard = memo(function SortableCard({
                             : "No due date"}
                         </span>
                       </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-ds-on-surface-variant">
+                        Created
+                      </span>
+                      <span className="text-sm font-semibold text-ds-on-surface">
+                        {formatCardCreatedAtForDetail(task.createdAt)}
+                      </span>
                     </div>
                     {task.label ? (
                       <div className="flex flex-col gap-2 sm:col-span-2">
@@ -969,6 +994,7 @@ const KanbanColumn = memo(function KanbanColumn({
       description: "",
       tags: [],
       dueAt: undefined,
+      createdAt: new Date().toISOString(),
     });
     resetForm();
   }
@@ -988,6 +1014,8 @@ const KanbanColumn = memo(function KanbanColumn({
     transition,
   };
 
+  const isDoneColumn = meta.title.trim().toLowerCase() === "done";
+
   return (
     <div
       ref={setNodeRef}
@@ -995,7 +1023,7 @@ const KanbanColumn = memo(function KanbanColumn({
       className={
         isColumnDragging
           ? "flex w-[min(100%,280px)] shrink-0 animate-card-drop-slot flex-col overflow-hidden rounded-xl border-2 border-dashed border-ds-primary-container/45 bg-ds-primary-fixed/40 backdrop-blur-sm transition-colors duration-300 dark:border-slate-600/55"
-          : `${meta.columnShellClass} relative z-0 overflow-visible transition-colors duration-300 has-[[data-kanban-card]:hover]:z-20 ${
+          : `${meta.columnShellClass} relative z-0 overflow-visible transition-colors duration-300 ${
               isSelected
                 ? "rounded-xl ring-2 ring-ds-primary-container/30 ring-offset-2 ring-offset-ds-surface-container-low dark:ring-offset-slate-950"
                 : ""
@@ -1099,7 +1127,7 @@ const KanbanColumn = memo(function KanbanColumn({
           items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className={columnId === "done" ? "flex flex-col gap-4 opacity-70" : "flex flex-col gap-4"}>
+          <div className={isDoneColumn ? "flex flex-col gap-4 opacity-70" : "flex flex-col gap-4"}>
           {tasks.length === 0 ? (
             <>
               {dropIndicatorIndex === 0 ? (
@@ -1115,6 +1143,7 @@ const KanbanColumn = memo(function KanbanColumn({
                   ) : null}
                   <SortableCard
                     columnTitle={meta.title}
+                    isDoneColumn={isDoneColumn}
                     task={task}
                     disabled={false}
                     onRenameCard={(id, newTitle) => onRenameCard(columnId, id, newTitle)}

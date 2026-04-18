@@ -9,6 +9,8 @@ export type KanbanTask = {
   tags: string[];
   label?: CardLabel;
   dueAt?: string;
+  /** ISO 8601 from server or set when the card is created client-side */
+  createdAt?: string;
   creatorImageUrl?: string;
   creatorName?: string;
 };

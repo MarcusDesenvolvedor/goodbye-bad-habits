@@ -40,6 +40,8 @@ export type InboxTask = {
   description: string;
   label?: CardLabel;
   comments?: string[];
+  /** ISO 8601 from server or set when the task is created client-side */
+  createdAt?: string;
 };
 
 /** Droppable id for the inbox list (shared with board-workspace drag logic). */
@@ -750,6 +752,7 @@ export function BoardInboxSection({
       id: crypto.randomUUID(),
       title: trimmed,
       description: "",
+      createdAt: new Date().toISOString(),
     });
     resetForm();
   }
